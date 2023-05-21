@@ -48,21 +48,24 @@ fn HomePage(cx: Scope) -> impl IntoView {
 }
 
 async fn check_pump() {
-    let text = reqwest::get("https://fakerapi.it/api/v1/custom?fname=firstName")
-        .await
-        .unwrap()
-        .text()
-        .await;
-    match text {
-        Ok(text) => log!("{}: rendering names", text),
-        Err(e) => log!("there was an error with the sending"),
-    };
+    let body = reqwest::get("http://fakerapi.it/api/v1/custom?fname=firstName").await;
+    match body {
+        Ok(b) => {
+            match b.text().await {
+                Ok(text) => log!("{}: rendering names", text),
+                Err(_e) => log!("there was an error with the sending"),
+            };
+        }
+        Err(e) => log!("{:?}", e),
+    }
 }
 
 #[component]
 fn PumpWater(cx: Scope) -> impl IntoView {
     // let check_pump = move |_| log!("{}: rendering Small", "gaga");
+    let stable = create_resource(cx, || (), |_| async move { check_pump().await });
     let (text, set_text) = create_signal(cx, "");
-    let async_data = create_resource(cx, text, |value| async move { check_pump().await });
-    view! {cx,<button on:click= async_data>" click me to check the pump"</button>}
+    // let async_data = create_resource(cx, text, |value| async move { check_pump().await });
+    // let hello_function = |_| log!("hello");
+    view! {cx,<button on:click= |_| stable.read(cx) >" click me to check the pump"</button>}
 }
