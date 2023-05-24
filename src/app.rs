@@ -47,7 +47,8 @@ fn HomePage(cx: Scope) -> impl IntoView {
     }
 }
 
-async fn check_pump() {
+#[server(CheckPump, "/api")]
+pub async fn check_pump() -> Result<(), ServerFnError> {
     let body = reqwest::get("http://fakerapi.it/api/v1/custom?fname=firstName").await;
     match body {
         Ok(b) => {
@@ -58,14 +59,14 @@ async fn check_pump() {
         }
         Err(e) => log!("{:?}", e),
     }
+    Ok(())
 }
 
 #[component]
 fn PumpWater(cx: Scope) -> impl IntoView {
-    // let check_pump = move |_| log!("{}: rendering Small", "gaga");
-    let stable = create_resource(cx, || (), |_| async move { check_pump().await });
-    let (text, set_text) = create_signal(cx, "");
-    // let async_data = create_resource(cx, text, |value| async move { check_pump().await });
-    // let hello_function = |_| log!("hello");
-    view! {cx,<button on:click= |_| stable.read(cx) >" click me to check the pump"</button>}
+    view! {cx,<button on:click= move |_| {
+        spawn_local(async{
+            check_pump().await.unwrap();
+        })
+    } >" click me to check the pump"</button>}
 }

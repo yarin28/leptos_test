@@ -1467,6 +1467,7 @@ dependencies = [
  "leptos_meta",
  "leptos_router",
  "reqwest",
+ "serde",
  "wasm-bindgen",
 ]
 
