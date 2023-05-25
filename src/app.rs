@@ -5,7 +5,6 @@ use leptos::{
 use leptos_meta::*;
 use leptos_router::*;
 use reqwest;
-use std::error::Error;
 
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
@@ -48,25 +47,29 @@ fn HomePage(cx: Scope) -> impl IntoView {
 }
 
 #[server(CheckPump, "/api")]
-pub async fn check_pump() -> Result<(), ServerFnError> {
-    let body = reqwest::get("http://fakerapi.it/api/v1/custom?fname=firstName").await;
-    match body {
-        Ok(b) => {
-            match b.text().await {
-                Ok(text) => log!("{}: rendering names", text),
-                Err(_e) => log!("there was an error with the sending"),
-            };
-        }
-        Err(e) => log!("{:?}", e),
-    }
-    Ok(())
+pub async fn check_pump() -> Result<String, ServerFnError> {
+    let body = reqwest::get("http://fakerapi.it/api/v1/custom?fname=firstName")
+        .await
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))?
+        .text()
+        .await
+        .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
+    Ok(body)
 }
 
 #[component]
 fn PumpWater(cx: Scope) -> impl IntoView {
-    view! {cx,<button on:click= move |_| {
-        spawn_local(async{
-            check_pump().await.unwrap();
-        })
-    } >" click me to check the pump"</button>}
+    let check_pump = create_action(cx, |_| async move { check_pump().await });
+    let pending = check_pump.pending();
+    view! {cx,<button on:click= move |ev| {
+            ev.prevent_default();
+            check_pump.dispatch(5);
+            }
+        // class={match check_pump {
+        //
+        // }}
+         >" click me to check the pump"</button>
+    <p>{move || pending().then(||"waiting for response") } </p>
+    <p>{move || check_pump.value()} </p>
+        }
 }
