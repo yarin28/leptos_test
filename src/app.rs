@@ -65,11 +65,10 @@ fn PumpWater(cx: Scope) -> impl IntoView {
             ev.prevent_default();
             check_pump.dispatch(5);
             }
-        // class={match check_pump {
-        //
-        // }}
+        class:green=move || { check_pump.value().get().is_some()}
+        class:yellow =pending
          >" click me to check the pump"</button>
     <p>{move || pending().then(||"waiting for response") } </p>
-    <p>{move || check_pump.value()} </p>
+    <p>{move || check_pump.value().get()} </p>
         }
 }
