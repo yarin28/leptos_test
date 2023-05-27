@@ -1,9 +1,8 @@
-use leptos::{
-    ev::{Event, MouseEvent},
-    *,
-};
+use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
+
+#[cfg(feature = "ssr")]
 use reqwest;
 
 #[component]
@@ -42,7 +41,7 @@ fn HomePage(cx: Scope) -> impl IntoView {
     view! { cx,
         <h1>"Welcome to Leptos!"</h1>
         <button on:click=on_click>"Click Me: " {count}</button>
-        <PumpWater/>
+        <PumpWaterCheck/>
     }
 }
 
@@ -56,18 +55,25 @@ pub async fn check_pump() -> Result<String, ServerFnError> {
         .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
     Ok(body)
 }
+pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {
+    value
+        .map(|v| v.unwrap_or("".to_string()).is_empty())
+        .unwrap_or(false)
+}
 
 #[component]
-fn PumpWater(cx: Scope) -> impl IntoView {
+fn PumpWaterCheck(cx: Scope) -> impl IntoView {
     let check_pump = create_action(cx, |_| async move { check_pump().await });
     let pending = check_pump.pending();
     view! {cx,<button on:click= move |ev| {
             ev.prevent_default();
             check_pump.dispatch(5);
             }
-        class:success-button=move || { check_pump.value().get().is_some()}
         class:warning-button =pending
-        // class:info-button =true
+        class:success-button=move || { check_pump.value().get().is_some() && pending.get() ==false && !check_if_empty(check_pump.value().get())}
+        class:info-button=move || { check_pump.version().get() ==0 && pending.get() ==false }
+        class:error-button=move || {check_pump.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
+        && pending.get()==false && check_pump.version().get() >0}
          >" click me to check the pump"</button>
     <p>{move || pending().then(||"waiting for response") } </p>
     <p>{move || check_pump.value().get()} </p>
