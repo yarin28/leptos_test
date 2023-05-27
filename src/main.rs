@@ -7,7 +7,9 @@ async fn main() -> std::io::Result<()> {
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use leptos_start::app::CheckPump;
     use leptos_start::app::*;
+    use utiles::configure_logger::configure_logger;
 
+    configure_logger()?;
     let conf = get_configuration(None).await.unwrap();
     let addr = conf.leptos_options.site_addr;
     // Generate the list of routes in your Leptos App
