@@ -4,6 +4,10 @@ use leptos_router::*;
 
 #[cfg(feature = "ssr")]
 use reqwest;
+#[cfg(feature = "ssr")]
+use tracing::info;
+#[cfg(feature = "ssr")]
+use tracing::{event, Level};
 
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
@@ -53,6 +57,7 @@ pub async fn check_pump() -> Result<String, ServerFnError> {
         .text()
         .await
         .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
+    info!("the body is -{:?} ", body);
     Ok(body)
 }
 pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {
