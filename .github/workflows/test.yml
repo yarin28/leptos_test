@@ -16,7 +16,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
     - uses: Swatinem/rust-cache@v2
     - name: say hello
-      run: echo "hello world"
+      run: echo "hello world from yarin"
     - name: Run tests
       run: cargo test --verbose
 
