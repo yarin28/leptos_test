@@ -18,7 +18,7 @@ jobs:
     - name: say hello
       run: echo "hello world from yarin"
     - name: install cargo leptos@0.1.7
-      run: cargo install cargo-leptos@0.1.17
+      run: cargo install cargo-leptos@0.1.7
     - name: Run tests
       run: cargo leptos test
 
