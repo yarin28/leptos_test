@@ -17,16 +17,15 @@ leptos_actix = { version = "0.3", optional = true }
 leptos_router = { version = "0.3", default-features = false }
 wasm-bindgen = "0.2.84"
 leptos_icons = "0.0.10"
-reqwest = "0.11.18"
+reqwest = {version = "0.11.18",default-features = false ,features = ["rustls-tls-native-roots"]}
 serde = { version = "1.0.163", features = ["derive"] }
-log4rs = "1.2.0"
-rppal = { version = "0.14.1", features = ["hal"] }
-embedded-hal = "0.2.7"
+rppal = { version = "0.14.1", features = ["hal"], optional = true }
+embedded-hal = { version = "0.2.7", optional = true }
 thiserror = "1.0.40"
 log = {version = "0.4.17"}
 [features]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
-ssr = ["dep:actix-files", "dep:actix-web", "dep:leptos_actix", "leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr"]
+ssr = ["dep:actix-files","dep:rppal","dep:embedded-hal", "dep:actix-web", "dep:leptos_actix", "leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr"]
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name   
