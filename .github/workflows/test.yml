@@ -17,10 +17,10 @@ jobs:
       with:
         toolchain: nightly-2023-02-14
     - uses: Swatinem/rust-cache@v2
-    - name: say hello
-      run: echo "hello world from yarin"
     - name: install cargo leptos
       run: cargo install cargo-leptos
+    - name: install the aarch64-unknown-linux-gnu
+      run: rustup target add aarch64-unknown-linux-gnu
     - name: Run tests
       run: cargo leptos test
 
