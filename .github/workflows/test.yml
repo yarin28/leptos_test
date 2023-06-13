@@ -19,8 +19,8 @@ jobs:
     - uses: Swatinem/rust-cache@v2
     - name: say hello
       run: echo "hello world from yarin"
-    - name: install cargo leptos@0.1.7
-      run: cargo install cargo-leptos@0.1.7
+    - name: install cargo leptos
+      run: cargo install cargo-leptos
     - name: Run tests
       run: cargo leptos test
 
