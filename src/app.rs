@@ -43,13 +43,14 @@ fn HomePage(cx: Scope) -> impl IntoView {
     let on_click = move |_| set_count.update(|count| *count += 1);
 
     view! { cx,
-        <h1>"Welcome to Leptos!"</h1>
+        <div class="card w-96 bg-base-100 shadow-xl prose">
+        <h1 class="text-red-500">"Welcome to the garden control system"</h1>
         <button on:click=on_click>"Click Me: " {count}</button>
         <PumpWaterCheck/>
+        </div>
     }
 }
-
-#[server(CheckPump, "/api")]
+#[server(CheckPump, "/check_pump")]
 pub async fn check_pump() -> Result<String, ServerFnError> {
     let body = reqwest::get("http://fakerapi.it/api/v1/custom?fname=firstName")
         .await
@@ -70,14 +71,19 @@ pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {
 fn PumpWaterCheck(cx: Scope) -> impl IntoView {
     let check_pump = create_action(cx, |_| async move { check_pump().await });
     let pending = check_pump.pending();
-    view! {cx,<button on:click= move |ev| {
+    view! {cx,
+
+        <div class="hidden btn-primary btn-warning btn-success btn-error"></div>//NOTE: the
+            //purpuse of the div is to include those classes in the output file, because leptos
+            //calls then with a diffrent syntax then tailwind-cli can see.
+        <button class="btn btn-primary" on:click= move |ev| {
             ev.prevent_default();
             check_pump.dispatch(5);
             }
-        class:warning-button =pending
-        class:success-button=move || { check_pump.value().get().is_some() && pending.get() ==false && !check_if_empty(check_pump.value().get())}
-        class:info-button=move || { check_pump.version().get() ==0 && pending.get() ==false }
-        class:error-button=move || {check_pump.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
+        class:btn-warning =pending
+        class:btn-success=move || { check_pump.value().get().is_some() && pending.get() ==false && !check_if_empty(check_pump.value().get())}
+        class:btn-info=move || { check_pump.version().get() ==0 && pending.get() ==false }
+        class:btn-error=move || {check_pump.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
         && pending.get()==false && check_pump.version().get() >0}
          >" click me to check the pump"</button>
     <p>{move || pending().then(||"waiting for response") } </p>
