@@ -17,7 +17,6 @@ readonly ENV_VARIABLES="LEPTOS_OUTPUT_NAME="leptos_start" LEPTOS_SITE_ROOT="site
 readonly COMMAND_TO_RUN_ON_TARGRT="cd ${TARGET_PATH_DIR}&& bash -c \"${ENV_VARIABLES} ${TARGET_PATH_BIN}\""
 cargo leptos build --release
 rsync ${SOURCE_PATH_BIN} ${SSH_HOST}:${TARGET_PATH}
-rsync ${RUN_SCRIPT} ${SSH_HOST}:${TARGET_PATH}
 rsync -r ${SOURCE_PATH_SITE} ${SSH_HOST}:${TARGET_PATH}
 cd ${TARGET_PATH_DIR}
 ssh -t ${SSH_HOST} ${COMMAND_TO_RUN_ON_TARGRT}
