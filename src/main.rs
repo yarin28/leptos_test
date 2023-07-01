@@ -11,7 +11,6 @@ async fn main() -> std::io::Result<()> {
     use leptos_start::app::*;
     use tracing::info;
     use tracing_appender::rolling::daily;
-    mod utils;
     let file_appender = tracing_appender::rolling::daily("./logs", "log_of_day");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::fmt()

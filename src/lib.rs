@@ -1,5 +1,5 @@
 pub mod app;
-pub mod utils;
+mod utils;
 use cfg_if::cfg_if;
 
 cfg_if! {

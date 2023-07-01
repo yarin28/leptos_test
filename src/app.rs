@@ -3,14 +3,12 @@ use leptos_meta::*;
 use leptos_router::*;
 
 #[cfg(feature = "ssr")]
+use crate::utils::pump_water as pump_water_actually;
+
+#[cfg(feature = "ssr")]
 use reqwest;
 #[cfg(feature = "ssr")]
 use tracing::info;
-
-#[cfg(feature = "ssr")]
-mod utils;
-#[cfg(feature = "ssr")]
-use utils::low_level_handeler;
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
@@ -66,8 +64,8 @@ pub async fn check_pump() -> Result<String, ServerFnError> {
 }
 
 #[server(PumpWater, "/api")]
-pub async fn pump_water() -> Result<String, ServerFnError> {
-    low_level_handeler::pump_water(3);
+pub async fn pump_water(seconds: usize) -> Result<String, ServerFnError> {
+    pump_water_actually(seconds).await;
     Ok("there was a return from the server".to_string())
 }
 
@@ -102,7 +100,7 @@ fn PumpWaterCheck(cx: Scope) -> impl IntoView {
 
 #[component]
 fn PumpWaterComponent(cx: Scope) -> impl IntoView {
-    let check_pump = create_action(cx, |_| async move { pump_water().await });
+    let check_pump = create_action(cx, |_| async move { pump_water(3).await });
     let pending = check_pump.pending();
     view! {cx,
 
