@@ -6,6 +6,8 @@ use leptos_router::*;
 use crate::utils::pump_water as pump_water_actually;
 
 #[cfg(feature = "ssr")]
+use anyhow::Result;
+#[cfg(feature = "ssr")]
 use reqwest;
 #[cfg(feature = "ssr")]
 use tracing::info;
@@ -65,8 +67,11 @@ pub async fn check_pump() -> Result<String, ServerFnError> {
 
 #[server(PumpWater, "/api")]
 pub async fn pump_water(seconds: usize) -> Result<String, ServerFnError> {
-    pump_water_actually(seconds).await;
-    Ok("there was a return from the server".to_string())
+    let res = match pump_water_actually(seconds).await {
+        Err(e) => Err(ServerFnError::ServerError(e.to_string())),
+        _ => Ok("there was no error from the server and the pump worked ".to_string()),
+    };
+    res
 }
 
 pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {
@@ -100,24 +105,34 @@ fn PumpWaterCheck(cx: Scope) -> impl IntoView {
 
 #[component]
 fn PumpWaterComponent(cx: Scope) -> impl IntoView {
-    let check_pump = create_action(cx, |_| async move { pump_water(3).await });
-    let pending = check_pump.pending();
+    let (value, set_value) = create_signal(cx, 0);
+    let pump_water = create_action(
+        cx,
+        move |_| async move { pump_water(value().clone()).await },
+    );
+    //NOTE: there could be a problem if i clone the value, will check it now.
+    let pending = pump_water.pending();
     view! {cx,
 
         <div class="hidden btn-primary btn-warning btn-success btn-error"></div>//NOTE: the
             //purpuse of the div is to include those classes in the output file, because leptos
             //calls then with a diffrent syntax then tailwind-cli can see.
+            <input type="range" class="range range-primary" min="1" max="100" value="50" id="myRange" on:input=move|ev|{
+                ev.prevent_default();
+                set_value(event_target_value(&ev).parse().unwrap());
+            }/>
         <button class="btn btn-primary" on:click= move |ev| {
             ev.prevent_default();
-            check_pump.dispatch(5);
+            pump_water.dispatch(value);
             }
         class:btn-warning =pending
-        class:btn-success=move || { check_pump.value().get().is_some() && pending.get() ==false && !check_if_empty(check_pump.value().get())}
-        class:btn-info=move || { check_pump.version().get() ==0 && pending.get() ==false }
-        class:btn-error=move || {check_pump.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
-        && pending.get()==false && check_pump.version().get() >0}
+        class:btn-success=move || { pump_water.value().get().is_some() && pending.get() ==false && !check_if_empty( pump_water.value().get())}
+        class:btn-info=move || { pump_water.version().get() ==0 && pending.get() ==false }
+        class:btn-error=move || {pump_water.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
+        && pending.get()==false && pump_water.version().get() >0}
          >" click me to check the pump"</button>
     <p>{move || pending().then(||"waiting for response") } </p>
-    <p>{move || check_pump.value().get()} </p>
+    <p>{move || pump_water.value().get()} </p>
+    <p>{move || value} </p>
         }
 }
