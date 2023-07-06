@@ -49,7 +49,7 @@ fn HomePage(cx: Scope) -> impl IntoView {
         <h1 class="text-red-500">"Welcome to the garden control system"</h1>
         <button on:click=on_click>"Click Me: " {count}</button>
         <PumpWaterCheck/>
-            <PumpWaterComponent/>
+        <PumpWaterComponent/>
         </div>
     }
 }
@@ -98,6 +98,7 @@ fn PumpWaterCheck(cx: Scope) -> impl IntoView {
         class:btn-error=move || {check_pump.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
         && pending.get()==false && check_pump.version().get() >0}
          >" click me to check the pump"</button>
+             <h3>"this is the pump button"</h3>
     <p>{move || pending().then(||"waiting for response") } </p>
     <p>{move || check_pump.value().get()} </p>
         }

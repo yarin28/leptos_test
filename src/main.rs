@@ -10,7 +10,7 @@ async fn main() -> std::io::Result<()> {
     use leptos_start::app::PumpWater;
     use leptos_start::app::*;
     use tracing::info;
-    use tracing_appender::rolling::daily;
+    // use tracing_appender::rolling::daily;
     let file_appender = tracing_appender::rolling::daily("./logs", "log_of_day");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::fmt()
@@ -21,8 +21,8 @@ async fn main() -> std::io::Result<()> {
     let conf = get_configuration(None).await.unwrap();
     let addr = conf.leptos_options.site_addr;
     // Generate the list of routes in your Leptos App
-    PumpWater::register();
-    CheckPump::register();
+    let _ = PumpWater::register();
+    let _ = CheckPump::register();
     let routes = generate_route_list(|cx| view! { cx, <App/> });
     //added the line below to register the "api" endpoint.
     HttpServer::new(move || {
