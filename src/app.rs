@@ -1,12 +1,14 @@
-use leptos::*;
+use anyhow::Result;
+use leptos::{html::Canvas, *};
 use leptos_meta::*;
 use leptos_router::*;
+use wasm_bindgen::JsCast;
+use web_sys::CanvasRenderingContext2d;
 
 #[cfg(feature = "ssr")]
 use crate::utils::pump_water as pump_water_actually;
+use tokio::time::{sleep, Duration};
 
-#[cfg(feature = "ssr")]
-use anyhow::Result;
 #[cfg(feature = "ssr")]
 use reqwest;
 #[cfg(feature = "ssr")]
@@ -46,11 +48,12 @@ fn HomePage(cx: Scope) -> impl IntoView {
 
     view! { cx,
         <div class="card w-96 bg-base-100 shadow-xl prose">
-        <h1 class="text-red-500">"Welcome to the garden control system"</h1>
+        <h1 >"Welcome to the garden control system"</h1>
         <button on:click=on_click>"Click Me: " {count}</button>
         <PumpWaterCheck/>
         <PumpWaterComponent/>
         </div>
+        <CanvasComponent/>
     }
 }
 #[server(CheckPump, "/api")]
@@ -107,10 +110,20 @@ fn PumpWaterCheck(cx: Scope) -> impl IntoView {
 #[component]
 fn PumpWaterComponent(cx: Scope) -> impl IntoView {
     let (value, set_value) = create_signal(cx, 0);
+    let (countdown, set_countdown) = create_signal(cx, 0);
     let pump_water = create_action(
         cx,
         move |_| async move { pump_water(value().clone()).await },
     );
+
+    // let countdown_to_zero: Action<_, ()> = create_action::<I>(cx, move |&I| async move {
+    //     set_countdown(value.get());
+    //     while countdown.get() != 0 {
+    //         sleep(Duration::from_secs(1)).await;
+    //         set_countdown(countdown.get() - 1);
+    //     }
+    // });
+
     //NOTE: there could be a problem if i clone the value, will check it now.
     let pending = pump_water.pending();
     view! {cx,
@@ -122,6 +135,7 @@ fn PumpWaterComponent(cx: Scope) -> impl IntoView {
                 ev.prevent_default();
                 set_value(event_target_value(&ev).parse().unwrap());
             }/>
+    <p>{move || countdown} </p>
         <button class="btn btn-primary" on:click= move |ev| {
             ev.prevent_default();
             pump_water.dispatch(value);
@@ -136,4 +150,47 @@ fn PumpWaterComponent(cx: Scope) -> impl IntoView {
     <p>{move || pump_water.value().get()} </p>
     <p>{move || value} </p>
         }
+}
+
+#[component]
+fn CanvasComponent(cx: Scope) -> impl IntoView {
+    if leptos::is_server() {
+        return view! {cx,<p>"cant run here"</p>};
+    };
+    let canvas = view! {cx,
+        <canvas/>
+    };
+    let context = canvas
+        .get_context("2d")
+        .unwrap()
+        .unwrap()
+        .dyn_into::<web_sys::CanvasRenderingContext2d>()
+        .unwrap();
+    context.begin_path();
+
+    // Draw the outer circle.
+    context
+        .arc(75.0, 75.0, 50.0, 0.0, std::f64::consts::PI * 2.0)
+        .unwrap();
+
+    // Draw the mouth.
+    context.move_to(110.0, 75.0);
+    context
+        .arc(75.0, 75.0, 35.0, 0.0, std::f64::consts::PI)
+        .unwrap();
+
+    // Draw the left eye.
+    context.move_to(65.0, 65.0);
+    context
+        .arc(60.0, 65.0, 5.0, 0.0, std::f64::consts::PI * 2.0)
+        .unwrap();
+
+    // Draw the right eye.
+    context.move_to(95.0, 65.0);
+    context
+        .arc(90.0, 65.0, 5.0, 0.0, std::f64::consts::PI * 2.0)
+        .unwrap();
+
+    context.stroke();
+    view! {cx,{canvas}}
 }

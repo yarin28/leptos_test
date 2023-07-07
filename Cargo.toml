@@ -16,7 +16,7 @@ leptos = { version = "0.3.1", default-features = false, features = ["serde"] }
 leptos_meta = { version = "0.3", default-features = false }
 leptos_actix = { version = "0.3", optional = true }
 leptos_router = { version = "0.3", default-features = false }
-wasm-bindgen = "0.2.84"
+wasm-bindgen = "0.2.87"
 leptos_icons = "0.0.10"
 #mine
 reqwest = {version = "0.11.18",default-features = false ,features = ["rustls-tls-native-roots"]}
@@ -31,11 +31,11 @@ tracing-subscriber = { version = "0.3.16", features = ["env-filter"],optional=tr
 tracing-appender = { version = "0.2", optional = true }
 tracing-actix-web= { version = "0.7", optional = true }
 env_logger =  { version = "0.9", optional = true }
-tokio = {version="1.28.2",features=["time"], optional=true}
+tokio = { version = "1.28.2", features = ["time"] }
 anyhow = "1.0.71"
 [features]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
-ssr = ["dep:tokio", "dep:tracing","dep:tracing-actix-web", "dep:env_logger", "dep:tracing-appender", "dep:tracing-appender", "dep:tracing-subscriber", "dep:actix-files", "dep:rppal", "dep:embedded-hal", "dep:actix-web", "dep:leptos_actix", "leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr"]
+ssr = ["dep:tracing", "dep:tracing-actix-web", "dep:env_logger", "dep:tracing-appender", "dep:tracing-appender", "dep:tracing-subscriber", "dep:actix-files", "dep:rppal", "dep:embedded-hal", "dep:actix-web", "dep:leptos_actix", "leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr"]
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name   
@@ -91,5 +91,15 @@ lib-features = ["hydrate"]
 lib-default-features = false
 
 ## the tailwind part 
-tailwind-input-file="./style/main.css"
-tailwind-config-file = "./tailwind.config.js"
+# tailwind-input-file="./style/input.css"
+# tailwind-config-file = "./tailwind.config.js"
+#for the canvas
+[dependencies.web-sys]
+# version = "0.3.4"
+features = [
+  'CanvasRenderingContext2d',
+  'Document',
+  'Element',
+  'HtmlCanvasElement',
+  'Window',
+]
