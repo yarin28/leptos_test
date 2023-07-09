@@ -1,4 +1,5 @@
 pub mod app;
+mod chart;
 mod utils;
 use cfg_if::cfg_if;
 

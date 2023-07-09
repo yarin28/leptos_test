@@ -1,13 +1,16 @@
+use crate::chart::{Chart, ChartConfiguration, ChartData, ChartDataSets, ChartType};
 use anyhow::Result;
 use leptos::{html::Canvas, *};
 use leptos_meta::*;
 use leptos_router::*;
 use wasm_bindgen::JsCast;
-use web_sys::CanvasRenderingContext2d;
+use web_sys::{
+    console::{self, info, log},
+    CanvasRenderingContext2d, HtmlCanvasElement,
+};
 
 #[cfg(feature = "ssr")]
 use crate::utils::pump_water as pump_water_actually;
-use tokio::time::{sleep, Duration};
 
 #[cfg(feature = "ssr")]
 use reqwest;
@@ -24,6 +27,8 @@ pub fn App(cx: Scope) -> impl IntoView {
         // injects a stylesheet into the document <head>
         // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/leptos_start.css"/>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"/>
 
         // sets the document title
         <Title text="Welcome to Leptos"/>
@@ -154,43 +159,92 @@ fn PumpWaterComponent(cx: Scope) -> impl IntoView {
 
 #[component]
 fn CanvasComponent(cx: Scope) -> impl IntoView {
-    if leptos::is_server() {
-        return view! {cx,<p>"cant run here"</p>};
-    };
-    let canvas = view! {cx,
-        <canvas/>
-    };
-    let context = canvas
-        .get_context("2d")
-        .unwrap()
-        .unwrap()
-        .dyn_into::<web_sys::CanvasRenderingContext2d>()
-        .unwrap();
-    context.begin_path();
+    // let canvas = view! {cx,
+    //     <canvas/>
+    // };
+    // let context = canvas
+    //     .get_context("2d")
+    //     .unwrap()
+    //     .unwrap()
+    //     .dyn_into::<web_sys::CanvasRenderingContext2d>()
+    //     .unwrap();
+    // context.begin_path();
+    //
+    // // Draw the outer circle.
+    // context
+    //     .arc(75.0, 75.0, 50.0, 0.0, std::f64::consts::PI * 2.0)
+    //     .unwrap();
+    //
+    // // Draw the mouth.
+    // context.move_to(110.0, 75.0);
+    // context
+    //     .arc(75.0, 75.0, 35.0, 0.0, std::f64::consts::PI)
+    //     .unwrap();
+    //
+    // // Draw the left eye.
+    // context.move_to(65.0, 65.0);
+    // context
+    //     .arc(60.0, 65.0, 5.0, 0.0, std::f64::consts::PI * 2.0)
+    //     .unwrap();
+    //
+    // // Draw the right eye.
+    // context.move_to(95.0, 65.0);
+    // context
+    //     .arc(90.0, 65.0, 5.0, 0.0, std::f64::consts::PI * 2.0)
+    //     .unwrap();
+    //
+    // context.stroke();
+    // view! {cx,{canvas}}
+    // let canvas: NodeRef<Canvas> = create_node_ref(cx);
+    let id = create_memo::<String>(cx, |t| {
+        t.cloned()
+            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string())
+    });
+    create_effect(cx, move |_| {
+        console::log_2(
+            &serde_wasm_bindgen::to_value("id").unwrap(),
+            &serde_wasm_bindgen::to_value(&id.get()).unwrap(),
+        );
+        console::log_2(
+            &serde_wasm_bindgen::to_value("asdf").unwrap(),
+            &serde_wasm_bindgen::to_value(
+                &web_sys::window()
+                    .unwrap()
+                    .document()
+                    .unwrap()
+                    .get_element_by_id(&id.get())
+                    .is_some(),
+            )
+            .unwrap(),
+        );
+        if let Some(canvas) = web_sys::window()
+            .unwrap()
+            .document()
+            .unwrap()
+            .get_element_by_id(&id.get())
+        {
+            let t = canvas.dyn_into::<HtmlCanvasElement>().unwrap();
+            Chart::new(
+                t,
+                ChartConfiguration {
+                    chart_type: Some(ChartType::Line),
+                    data: Some(ChartData {
+                        labels: Some(vec![
+                            "1".to_string(),
+                            "2".to_string(),
+                            "3".to_string(),
+                            "4".to_string(),
+                        ]),
+                        datasets: Some(vec![ChartDataSets {
+                            label: Some("lable1".to_string()),
+                            data: Some(vec![1.1, 2.2, 3.3, 4.4]),
+                            ..Default::default()
+                        }]),
+                    }),
+                },
+            );
+        }
+    });
 
-    // Draw the outer circle.
-    context
-        .arc(75.0, 75.0, 50.0, 0.0, std::f64::consts::PI * 2.0)
-        .unwrap();
-
-    // Draw the mouth.
-    context.move_to(110.0, 75.0);
-    context
-        .arc(75.0, 75.0, 35.0, 0.0, std::f64::consts::PI)
-        .unwrap();
-
-    // Draw the left eye.
-    context.move_to(65.0, 65.0);
-    context
-        .arc(60.0, 65.0, 5.0, 0.0, std::f64::consts::PI * 2.0)
-        .unwrap();
-
-    // Draw the right eye.
-    context.move_to(95.0, 65.0);
-    context
-        .arc(90.0, 65.0, 5.0, 0.0, std::f64::consts::PI * 2.0)
-        .unwrap();
-
-    context.stroke();
-    view! {cx,{canvas}}
+    view! {cx, <canvas id=id/>}
 }
