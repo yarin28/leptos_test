@@ -200,6 +200,7 @@ fn CanvasComponent(cx: Scope) -> impl IntoView {
         t.cloned()
             .unwrap_or_else(|| uuid::Uuid::new_v4().to_string())
     });
+    let canvas = view! {cx, <canvas id=id/>};
     create_effect(cx, move |_| {
         console::log_2(
             &serde_wasm_bindgen::to_value("id").unwrap(),
@@ -245,6 +246,5 @@ fn CanvasComponent(cx: Scope) -> impl IntoView {
             );
         }
     });
-
-    view! {cx, <canvas id=id/>}
+    view! {cx,{canvas}}
 }
