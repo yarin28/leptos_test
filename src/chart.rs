@@ -1,4 +1,3 @@
-use leptos::HtmlElement;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
@@ -61,7 +60,7 @@ extern "C" {
 }
 
 impl Chart {
-    pub fn new(item: HtmlCanvasElement, userConfig: ChartConfiguration) -> Self {
-        Chart::new_internal(item, serde_wasm_bindgen::to_value(&userConfig).unwrap())
+    pub fn new(item: HtmlCanvasElement, user_config: ChartConfiguration) -> Self {
+        Chart::new_internal(item, serde_wasm_bindgen::to_value(&user_config).unwrap())
     }
 }

@@ -1,13 +1,10 @@
 use crate::chart::{Chart, ChartConfiguration, ChartData, ChartDataSets, ChartType};
 use anyhow::Result;
-use leptos::{html::Canvas, *};
+use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 use wasm_bindgen::JsCast;
-use web_sys::{
-    console::{self, info, log},
-    CanvasRenderingContext2d, HtmlCanvasElement,
-};
+use web_sys::{console, HtmlCanvasElement};
 
 #[cfg(feature = "ssr")]
 use crate::utils::pump_water as pump_water_actually;
@@ -159,43 +156,6 @@ fn PumpWaterComponent(cx: Scope) -> impl IntoView {
 
 #[component]
 fn CanvasComponent(cx: Scope) -> impl IntoView {
-    // let canvas = view! {cx,
-    //     <canvas/>
-    // };
-    // let context = canvas
-    //     .get_context("2d")
-    //     .unwrap()
-    //     .unwrap()
-    //     .dyn_into::<web_sys::CanvasRenderingContext2d>()
-    //     .unwrap();
-    // context.begin_path();
-    //
-    // // Draw the outer circle.
-    // context
-    //     .arc(75.0, 75.0, 50.0, 0.0, std::f64::consts::PI * 2.0)
-    //     .unwrap();
-    //
-    // // Draw the mouth.
-    // context.move_to(110.0, 75.0);
-    // context
-    //     .arc(75.0, 75.0, 35.0, 0.0, std::f64::consts::PI)
-    //     .unwrap();
-    //
-    // // Draw the left eye.
-    // context.move_to(65.0, 65.0);
-    // context
-    //     .arc(60.0, 65.0, 5.0, 0.0, std::f64::consts::PI * 2.0)
-    //     .unwrap();
-    //
-    // // Draw the right eye.
-    // context.move_to(95.0, 65.0);
-    // context
-    //     .arc(90.0, 65.0, 5.0, 0.0, std::f64::consts::PI * 2.0)
-    //     .unwrap();
-    //
-    // context.stroke();
-    // view! {cx,{canvas}}
-    // let canvas: NodeRef<Canvas> = create_node_ref(cx);
     let id = create_memo::<String>(cx, |t| {
         t.cloned()
             .unwrap_or_else(|| uuid::Uuid::new_v4().to_string())
