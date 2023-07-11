@@ -9,8 +9,8 @@ async fn main() -> std::io::Result<()> {
     use leptos_start::app::CheckPump;
     use leptos_start::app::PumpWater;
     use leptos_start::app::*;
+    use leptos_start::my_scheduler::*;
     use tracing::info;
-    // use tracing_appender::rolling::daily;
     let file_appender = tracing_appender::rolling::daily("./logs", "log_of_day");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::fmt()
@@ -18,6 +18,7 @@ async fn main() -> std::io::Result<()> {
         .with_ansi(false)
         .init();
     info!("started the server");
+    lunch_the_watering_schedualed_program().await.unwrap();
     let conf = get_configuration(None).await.unwrap();
     let addr = conf.leptos_options.site_addr;
     // Generate the list of routes in your Leptos App
