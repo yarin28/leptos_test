@@ -1,9 +1,10 @@
+// the types are taken from - [Types Github]: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/chart.js/index.d.ts
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "camelCase")]
 pub enum ChartType {
     Timeline,
     Area,
@@ -27,6 +28,24 @@ pub enum ChartType {
     Treemap,
     Waterfall,
 }
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ScaleType {
+    Category,
+    Linear,
+    Logarithmic,
+    Time,
+    RadialLinear,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PositionType {
+    Left,
+    Right,
+    Top,
+    Buttom,
+    ChartArea,
+}
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChartDataSets {
@@ -46,6 +65,21 @@ pub struct ChartData {
     pub labels: Option<Vec<String>>,
     pub datasets: Option<Vec<ChartDataSets>>,
 }
+#[derive(Default, serde::Serialize, serde::Deserialize)]
+pub struct ChartScales {
+    #[serde(rename = "type")]
+    pub chart_scale_type: Option<ScaleType>,
+    pub position: Option<PositionType>,
+}
+#[derive(Default, serde::Serialize, serde::Deserialize)]
+pub struct ScatterData {
+    pub x: Option<f64>,
+    pub y: Option<f64>,
+    pub r: Option<f64>,
+    pub t: Option<f64>,
+}
+#[derive(Default, serde::Serialize, serde::Deserialize)]
+pub struct ChartOptions {}
 #[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct ChartConfiguration {
     #[serde(rename = "type")]
