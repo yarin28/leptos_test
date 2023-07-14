@@ -2,3 +2,11 @@
 linker = "aarch64-linux-gnu-gcc"
 # [build]
 # target = "wasm32-unknown-unknown"
+[alias]     # command aliases
+b = "build"
+c = "check"
+t = "test"
+r = "run"
+rr = "run --release"
+[env]
+CRON_STRING = "0  1/5 * * * *"
