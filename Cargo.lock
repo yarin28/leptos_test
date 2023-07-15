@@ -1537,6 +1537,7 @@ dependencies = [
  "console_error_panic_hook",
  "embedded-hal 0.2.7",
  "env_logger",
+ "lazy_static",
  "leptos",
  "leptos_actix",
  "leptos_icons",
