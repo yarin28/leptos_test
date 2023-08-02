@@ -29,13 +29,10 @@ lazy_static::lazy_static! {
     pub static ref CONFIG: Mutex<Config<>> = Mutex::new(Config::new());
 }
 
-fn create_water_pump_job() -> Result<Job> {
-    let mut jj = Job::new_repeated(Duration::from_secs(8), |uuid, l| {
+async fn create_water_pump_job() -> Result<Job> {
+    let mut jj = Job::new_repeated(Duration::from_secs(8), move |uuid, mut l| {
         {
-            info!(
-                "the cron string is - {:?}",
-                CONFIG.blocking_lock().cron_string
-            );
+            info!("the cron string is - {:?}", CONFIG.blocking_lock());
             Box::pin(async move {
                 // Query the next execution time for this job
                 let next_tick = l.next_tick_for_job(uuid).await;
@@ -56,7 +53,8 @@ fn create_water_pump_job() -> Result<Job> {
             });
         }
     })?;
-    return Ok(jj);
+    println!("{:?}", jj.job_data().unwrap());
+    Ok(jj)
 }
 pub async fn lunch_the_watering_schedualed_program() -> Result<()> {
     info!("enterd lunch_the_watering_schedualed_program");
@@ -65,10 +63,14 @@ pub async fn lunch_the_watering_schedualed_program() -> Result<()> {
         info!("the file_config is {:?}", file_config.cron_string);
     }
     let mut sched = JobScheduler::new().await?;
-    info!("the cron string is  - {:?}", env!("CRON_STRING"));
+    let water_pump_job = create_water_pump_job();
+    sched.add(water_pump_job.await.unwrap()).await?;
+    info!(
+        "the cron string is - {:?}",
+        CONFIG.lock().await.cron_string // CONFIG.blocking_lock().cron_string
+    );
     sched
         .add(Job::new_async(env!("CRON_STRING"), move |uuid, mut l| {
-            info!("the cron string is - {:?}", CONFIG.lock().await.cron_string);
             Box::pin(async move {
                 // Query the next execution time for this job
                 let next_tick = l.next_tick_for_job(uuid).await;
