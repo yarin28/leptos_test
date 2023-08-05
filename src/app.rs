@@ -112,7 +112,6 @@ fn PumpWaterCheck(cx: Scope) -> impl IntoView {
 #[component]
 fn PumpWaterComponent(cx: Scope) -> impl IntoView {
     let (value, set_value) = create_signal(cx, 0);
-    let (countdown, set_countdown) = create_signal(cx, 0);
     let pump_water = create_action(
         cx,
         move |_| async move { pump_water(value().clone()).await },
@@ -137,7 +136,6 @@ fn PumpWaterComponent(cx: Scope) -> impl IntoView {
                 ev.prevent_default();
                 set_value(event_target_value(&ev).parse().unwrap());
             }/>
-    <p>{move || countdown} </p>
         <button class="btn btn-primary" on:click= move |ev| {
             ev.prevent_default();
             pump_water.dispatch(value);
