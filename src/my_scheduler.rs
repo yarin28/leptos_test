@@ -31,6 +31,17 @@ lazy_static::lazy_static! {
     pub static ref CONFIG: Mutex<Config<>> = Mutex::new(Config::new());
 }
 
+pub struct SchedulerMutex {
+    scheduler: Mutex<MyScheduler>,
+}
+
+impl SchedulerMutex {
+    pub async fn new() -> Result<Self> {
+        Ok(SchedulerMutex {
+            scheduler: Mutex::new(MyScheduler::new().await?),
+        })
+    }
+}
 pub struct MyScheduler {
     sched: JobScheduler,
     water_pump_job_uuid: Uuid,
@@ -52,7 +63,17 @@ impl MyScheduler {
             water_pump_job_curret_corn_string,
         })
     }
+    pub async fn add_all_jobs_to_sched(&mut self) -> Result<Uuid> {
+        let job = self.create_cron_changing_job().await?;
+        let uuid_of_job = self.sched.add(job).await?;
+        Ok(uuid_of_job)
+    }
+    #[instrument(skip(self), fields(self.water_pump_job_uuid = %self.water_pump_job_uuid,self.water_pump_job_curret_corn_string,%self.water_pump_job_curret_corn_string))]
     pub async fn change_cron_string_in_job(&mut self, new_cron_string: String) {
+        info!(
+            "if current- {:?} != new-{:?}",
+            self.water_pump_job_curret_corn_string, new_cron_string
+        );
         if new_cron_string != self.water_pump_job_curret_corn_string {
             self.sched
                 .remove(&self.water_pump_job_uuid)
@@ -71,6 +92,7 @@ impl MyScheduler {
                 .expect("couldnt start the Scheduler");
         };
     }
+    #[instrument]
     async fn create_water_pump_job(cron_string: String) -> Result<Job> {
         let mut jj = Job::new_async(cron_string.as_str(), move |uuid, mut l| {
             {
@@ -102,6 +124,30 @@ impl MyScheduler {
             }
         })?;
         println!("{:?}", jj.job_data().unwrap());
+        Ok(jj)
+    }
+    #[instrument(skip(self), fields(self.water_pump_job_uuid = %self.water_pump_job_uuid,self.water_pump_job_curret_corn_string,%self.water_pump_job_curret_corn_string))]
+    async fn create_cron_changing_job(&mut self) -> Result<Job> {
+        let jj = Job::new_async("1/10 * * * * *", |uuid, mut l| {
+            Box::pin(async move {
+                let mut file_config = CONFIG.lock().await;
+                let current_seconds_of_minute = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs()
+                    % 60;
+                let new_str = format!("{}{}{}", "1/", current_seconds_of_minute, " * * * * * * ");
+                info!("new cron String{:?}", new_str);
+                let mut jj = self.change_cron_string_in_job(new_str).await;
+                // .expect("there was an error with creating the new water pump job");
+                // info!("the job data is{:?}", jj.job_data());
+                let next_tick = l.next_tick_for_job(uuid).await;
+                match next_tick {
+                    Ok(Some(ts)) => println!("Next time for 7s job is {:?}", ts),
+                    _ => println!("Could not get next tick for 7s job"),
+                }
+            })
+        })?;
         Ok(jj)
     }
 }
