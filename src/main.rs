@@ -18,7 +18,7 @@ async fn main() -> std::io::Result<()> {
         .with_ansi(false)
         .init();
     info!("started the server");
-    let mut scheduler = Scheduler::new().await.unwrap();
+    SchedulerMutex::new().await.unwrap();
     let conf = get_configuration(None).await.unwrap();
     let addr = conf.leptos_options.site_addr;
     // Generate the list of routes in your Leptos App

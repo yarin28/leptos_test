@@ -72,11 +72,10 @@ pub async fn check_pump() -> Result<String, ServerFnError> {
 
 #[server(PumpWater, "/api")]
 pub async fn pump_water(seconds: usize) -> Result<String, ServerFnError> {
-    let res = match pump_water_actually(seconds).await {
+    match pump_water_actually(seconds).await {
         Err(e) => Err(ServerFnError::ServerError(e.to_string())),
         _ => Ok("there was no error from the server and the pump worked ".to_string()),
-    };
-    res
+    }
 }
 
 pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {
@@ -98,13 +97,13 @@ fn PumpWaterCheck(cx: Scope) -> impl IntoView {
             check_pump.dispatch(5);
             }
         class:btn-warning =pending
-        class:btn-success=move || { check_pump.value().get().is_some() && pending.get() ==false && !check_if_empty(check_pump.value().get())}
-        class:btn-info=move || { check_pump.version().get() ==0 && pending.get() ==false }
+        class:btn-success=move || { check_pump.value().get().is_some() && !pending.get() && !check_if_empty(check_pump.value().get())}
+        class:btn-info=move || { check_pump.version().get() ==0 && !pending.get() }
         class:btn-error=move || {check_pump.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
-        && pending.get()==false && check_pump.version().get() >0}
+        && !pending.get() && check_pump.version().get() >0}
          >" click me to check the pump"</button>
              <h3>"this is the pump button"</h3>
-    <p>{move || pending().then(||"waiting for response") } </p>
+    <p>{move || pending().then_some("waiting for response") } </p>
     <p>{move || check_pump.value().get()} </p>
         }
 }
@@ -112,10 +111,7 @@ fn PumpWaterCheck(cx: Scope) -> impl IntoView {
 #[component]
 fn PumpWaterComponent(cx: Scope) -> impl IntoView {
     let (value, set_value) = create_signal(cx, 0);
-    let pump_water = create_action(
-        cx,
-        move |_| async move { pump_water(value().clone()).await },
-    );
+    let pump_water = create_action(cx, move |_| async move { pump_water(value()).await });
 
     // let countdown_to_zero: Action<_, ()> = create_action::<I>(cx, move |&I| async move {
     //     set_countdown(value.get());
@@ -141,12 +137,12 @@ fn PumpWaterComponent(cx: Scope) -> impl IntoView {
             pump_water.dispatch(value);
             }
         class:btn-warning =pending
-        class:btn-success=move || { pump_water.value().get().is_some() && pending.get() ==false && !check_if_empty( pump_water.value().get())}
-        class:btn-info=move || { pump_water.version().get() ==0 && pending.get() ==false }
+        class:btn-success=move || { pump_water.value().get().is_some() && !pending.get() && !check_if_empty( pump_water.value().get())}
+        class:btn-info=move || { pump_water.version().get() ==0 && !pending.get() }
         class:btn-error=move || {pump_water.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
-        && pending.get()==false && pump_water.version().get() >0}
+        && !pending.get() && pump_water.version().get() >0}
          >" click me to check the pump"</button>
-    <p>{move || pending().then(||"waiting for response") } </p>
+    <p>{move || pending().then_some("waiting for response") } </p>
     <p>{move || pump_water.value().get()} </p>
     <p>{move || value} </p>
         }
