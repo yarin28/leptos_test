@@ -6,6 +6,7 @@ async fn main() -> std::io::Result<()> {
     use actix_web::*;
     use leptos::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
+    use leptos_start::app::ChangeCronString;
     use leptos_start::app::CheckPump;
     use leptos_start::app::PumpWater;
     use leptos_start::app::*;
@@ -18,12 +19,13 @@ async fn main() -> std::io::Result<()> {
         .with_ansi(false)
         .init();
     info!("started the server");
-    SchedulerMutex::new().await.unwrap();
+    let scheduler = SchedulerMutex::new().await.unwrap();
     let conf = get_configuration(None).await.unwrap();
     let addr = conf.leptos_options.site_addr;
     // Generate the list of routes in your Leptos App
     let _ = PumpWater::register();
     let _ = CheckPump::register();
+    let _ = ChangeCronString::register();
     let routes = generate_route_list(|cx| view! { cx, <App/> });
     //added the line below to register the "api" endpoint.
     HttpServer::new(move || {
@@ -39,6 +41,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(Files::new("/", site_root))
             .wrap(Logger::default())
+            .app_data(scheduler.clone())
         //.wrap(middleware::Compress::default())
     })
     .bind(&addr)?

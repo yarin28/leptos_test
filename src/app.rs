@@ -6,13 +6,16 @@ use leptos_router::*;
 use wasm_bindgen::JsCast;
 use web_sys::{console, HtmlCanvasElement};
 
-#[cfg(feature = "ssr")]
+use cfg_if::cfg_if;
+cfg_if! {
+if #[cfg(feature = "ssr")] {
 use crate::utils::pump_water as pump_water_actually;
-
-#[cfg(feature = "ssr")]
+use crate::my_scheduler::SchedulerMutex;
 use reqwest;
-#[cfg(feature = "ssr")]
 use tracing::info;
+use actix_web::web::Data;
+}
+}
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
@@ -70,6 +73,13 @@ pub async fn check_pump() -> Result<String, ServerFnError> {
     Ok(body)
 }
 
+#[server(ChangeCronString, "/api", "Url")]
+pub async fn change_corn_string(
+    scheduler_mutex: Data<SchedulerMutex>,
+    new_cron_string: String,
+) -> Result<String, ServerFnError> {
+    todo!()
+}
 #[server(PumpWater, "/api")]
 pub async fn pump_water(seconds: usize) -> Result<String, ServerFnError> {
     match pump_water_actually(seconds).await {

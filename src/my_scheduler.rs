@@ -1,9 +1,7 @@
 use crate::utils::pump_water as pump_water_actually;
 use anyhow::Result;
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
-use tokio::time::Duration;
-use tokio::{sync::Mutex, task::futures};
+use tokio::sync::Mutex;
 use tokio_cron_scheduler::{Job, JobScheduler};
 use tracing::{error, info, Level};
 use tracing::{event, instrument};
@@ -32,56 +30,27 @@ lazy_static::lazy_static! {
     pub static ref CONFIG: Mutex<Config<>> = Mutex::new(Config::new());
 }
 
+#[derive(Clone)]
 pub struct SchedulerMutex {
     scheduler: Arc<Mutex<MyScheduler>>,
 }
 
 impl SchedulerMutex {
     pub async fn new() -> Result<Self> {
-        let mut scheduler_mutex = SchedulerMutex {
+        let scheduler_mutex = SchedulerMutex {
             scheduler: Arc::new(Mutex::new(MyScheduler::new().await?)),
         };
-        Self::add_all_jobs_to_sched(&mut scheduler_mutex).await?;
         Ok(scheduler_mutex)
     }
 
-    pub async fn add_all_jobs_to_sched(&mut self) -> Result<Uuid> {
-        let scheduler_clone = Arc::clone(&self.scheduler);
-        let job = SchedulerMutex::create_cron_changing_job(scheduler_clone).await?;
-        let uuid_of_job = self.scheduler.lock().await.sched.add(job).await?;
-        Ok(uuid_of_job)
+    pub async fn change_cron_string(&mut self, new_cron_string: String) -> Result<()> {
+        self.scheduler
+            .lock()
+            .await
+            .change_cron_string_in_job(new_cron_string)
+            .await
     }
     // #[instrument(skip(self), fields(self.scheduler.water_pump_job_uuid = %self.scheduler.lock().await.water_pump_job_uuid,self.scheduler.water_pump_job_curret_corn_string= %self.scheduler.lock().await.water_pump_job_curret_corn_string))]
-    #[instrument(skip(scheduler_mutex))]
-    async fn create_cron_changing_job(scheduler_mutex: Arc<Mutex<MyScheduler>>) -> Result<Job> {
-        event!(Level::INFO, "enterd the create_cron_changing_job");
-        let jj = Job::new_async("1/10 * * * * *", move |uuid, mut l| {
-            let scheduler_mutex_cloned = Arc::clone(&scheduler_mutex);
-            Box::pin(async move {
-                // let file_config = CONFIG.lock().await;
-                let current_seconds_of_minute = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs()
-                    % 60;
-                let new_str = format!("{}{}{}", "1/", current_seconds_of_minute, " * * * * * * ");
-                info!("new cron String{:?}", new_str);
-                scheduler_mutex_cloned
-                    .lock()
-                    .await
-                    .change_cron_string_in_job(new_str)
-                    .await
-                    .expect("there was an error with creating the new water pump job");
-                // info!("the job data is{:?}", jj.job_data());
-                let next_tick = l.next_tick_for_job(uuid).await;
-                match next_tick {
-                    Ok(Some(ts)) => info!("Next time for 7s job is {:?}", ts),
-                    _ => println!("Could not get next tick for 7s job"),
-                }
-            })
-        })?;
-        Ok(jj)
-    }
 }
 pub struct MyScheduler {
     sched: JobScheduler,
@@ -169,6 +138,47 @@ impl MyScheduler {
                     }
                 })
             }
+        })?;
+        Ok(jj)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+    #[test]
+    fn it_works() {
+        let result = 2 + 2;
+        assert_eq!(result, 4);
+    }
+    #[instrument(skip(scheduler_mutex))]
+    async fn create_cron_changing_job(scheduler_mutex: Arc<Mutex<MyScheduler>>) -> Result<Job> {
+        event!(Level::INFO, "enterd the create_cron_changing_job");
+        let jj = Job::new_async("1/10 * * * * *", move |uuid, mut l| {
+            let scheduler_mutex_cloned = Arc::clone(&scheduler_mutex);
+            Box::pin(async move {
+                // let file_config = CONFIG.lock().await;
+                let current_seconds_of_minute = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs()
+                    % 60;
+                let new_str = format!("{}{}{}", "1/", current_seconds_of_minute, " * * * * * * ");
+                info!("new cron String{:?}", new_str);
+                scheduler_mutex_cloned
+                    .lock()
+                    .await
+                    .change_cron_string_in_job(new_str)
+                    .await
+                    .expect("there was an error with creating the new water pump job");
+                // info!("the job data is{:?}", jj.job_data());
+                let next_tick = l.next_tick_for_job(uuid).await;
+                match next_tick {
+                    Ok(Some(ts)) => info!("Next time for 7s job is {:?}", ts),
+                    _ => println!("Could not get next tick for 7s job"),
+                }
+            })
         })?;
         Ok(jj)
     }
