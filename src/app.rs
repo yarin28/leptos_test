@@ -88,7 +88,7 @@ pub async fn change_corn_string(
     leptos_actix::extract(
         cx,
         move |scheduler: actix_web::web::Data<SchedulerMutex>| async move {
-            dbg!(scheduler);
+            scheduler.change_cron_string(new_cron_string).await;
         },
     )
     .await?;
