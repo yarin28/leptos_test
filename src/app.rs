@@ -61,6 +61,7 @@ fn HomePage(cx: Scope) -> impl IntoView {
         <div class="card w-96 bg-base-100 shadow-xl prose">
         <h1 >"Welcome to the garden control system"</h1>
         <button on:click=on_click>"Click Me: " {count}</button>
+        <TestComponent/>
         <PumpWaterCheck/>
         <PumpWaterComponent/>
         </div>
@@ -79,15 +80,20 @@ pub async fn check_pump() -> Result<String, ServerFnError> {
     Ok(body)
 }
 
-// #[server(ChangeCronString, "/api")]
-// pub async fn change_corn_string(
-//     cx: Scope,
-//     new_cron_string: String,
-//     test_string: actix_web::web::Data<String>,
-// ) -> Result<String, ServerFnError> {
-//     dbg!(test_string);
-//     Ok("the function worked".to_string())
-// }
+#[server(ChangeCronString, "/api")]
+pub async fn change_corn_string(
+    cx: Scope,
+    new_cron_string: String,
+) -> Result<String, ServerFnError> {
+    leptos_actix::extract(
+        cx,
+        move |scheduler: actix_web::web::Data<SchedulerMutex>| async move {
+            dbg!(scheduler);
+        },
+    )
+    .await?;
+    Ok("the function worked".to_string())
+}
 #[server(PumpWater, "/api")]
 pub async fn pump_water(seconds: usize) -> Result<String, ServerFnError> {
     match pump_water_actually(seconds).await {
@@ -219,4 +225,17 @@ fn CanvasComponent(cx: Scope) -> impl IntoView {
         }
     });
     view! {cx,{canvas}}
+}
+#[component]
+fn TestComponent(cx: Scope) -> impl IntoView {
+    let test = create_action(cx, move |_| async move {
+        change_corn_string(cx, "1/2 * * * * * *".to_string()).await
+    });
+    view! {cx,
+    <button class="btn btn-primary" on:click= move |ev| {
+        ev.prevent_default();
+        test.dispatch(5);
+        }
+     >"click here to test"</button>
+    }
 }
