@@ -16,11 +16,17 @@ use crate::my_scheduler::SchedulerMutex;
 use actix_web::web::Data;
 }
 }
+
+// pub async fn get_mutex_scheduler(
+//     scheduler: actix_web::web::Data<SchedulerMutex>,
+// ) -> Result<SchedulerMutex> {
+//     todo!();
+// }
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context(cx);
-
+    dbg!(cx.all_resources());
     view! {
         cx,
 
@@ -73,11 +79,15 @@ pub async fn check_pump() -> Result<String, ServerFnError> {
     Ok(body)
 }
 
-#[server(ChangeCronString, "/api")]
-pub async fn change_corn_string(new_cron_string: String) -> Result<String, ServerFnError> {
-    Data
-    todo!()
-}
+// #[server(ChangeCronString, "/api")]
+// pub async fn change_corn_string(
+//     cx: Scope,
+//     new_cron_string: String,
+//     test_string: actix_web::web::Data<String>,
+// ) -> Result<String, ServerFnError> {
+//     dbg!(test_string);
+//     Ok("the function worked".to_string())
+// }
 #[server(PumpWater, "/api")]
 pub async fn pump_water(seconds: usize) -> Result<String, ServerFnError> {
     match pump_water_actually(seconds).await {
