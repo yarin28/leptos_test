@@ -10,9 +10,9 @@ use cfg_if::cfg_if;
 cfg_if! {
 if #[cfg(feature = "ssr")] {
 use crate::utils::pump_water as pump_water_actually;
-use crate::my_scheduler::SchedulerMutex;
 use reqwest;
 use tracing::info;
+use crate::my_scheduler::SchedulerMutex;
 use actix_web::web::Data;
 }
 }
@@ -73,11 +73,9 @@ pub async fn check_pump() -> Result<String, ServerFnError> {
     Ok(body)
 }
 
-#[server(ChangeCronString, "/api", "Url")]
-pub async fn change_corn_string(
-    scheduler_mutex: Data<SchedulerMutex>,
-    new_cron_string: String,
-) -> Result<String, ServerFnError> {
+#[server(ChangeCronString, "/api")]
+pub async fn change_corn_string(new_cron_string: String) -> Result<String, ServerFnError> {
+    Data
     todo!()
 }
 #[server(PumpWater, "/api")]
