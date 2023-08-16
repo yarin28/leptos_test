@@ -85,10 +85,14 @@ pub async fn change_corn_string(
     cx: Scope,
     new_cron_string: String,
 ) -> Result<String, ServerFnError> {
+    dbg!(new_cron_string.clone());
     leptos_actix::extract(
         cx,
-        move |scheduler: actix_web::web::Data<SchedulerMutex>| async move {
-            scheduler.change_cron_string(new_cron_string).await;
+        move |scheduler: actix_web::web::Data<SchedulerMutex>| {
+            let new_cron_string_2 = new_cron_string.clone();
+            async move {
+                scheduler.change_cron_string(new_cron_string_2).await; //TODO: implenemt result
+            }
         },
     )
     .await?;
@@ -229,7 +233,7 @@ fn CanvasComponent(cx: Scope) -> impl IntoView {
 #[component]
 fn TestComponent(cx: Scope) -> impl IntoView {
     let test = create_action(cx, move |_| async move {
-        change_corn_string(cx, "1/2 * * * * * *".to_string()).await
+        change_corn_string(cx, "1/5 * * * * * *".to_string()).await
     });
     view! {cx,
     <button class="btn btn-primary" on:click= move |ev| {

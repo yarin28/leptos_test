@@ -43,7 +43,7 @@ impl SchedulerMutex {
         Ok(scheduler_mutex)
     }
 
-    pub async fn change_cron_string(&mut self, new_cron_string: String) -> Result<()> {
+    pub async fn change_cron_string(&self, new_cron_string: String) -> Result<()> {
         self.scheduler
             .lock()
             .await
@@ -194,35 +194,3 @@ mod tests {
         Ok(jj)
     }
 }
-
-/*notes:
-# the problem right now
-
-i want to initiate the jobs in the main. i want to access the mutex from leptos
-server functions i need to *pass* the mutex to the server functions.
-
-Summary of all the options to implement this
-1.  using the actix .app_data() - this wont work because the leptos server
-    functions are syntactic sugar above the real implementation of actix
-    endpoints. And that macro will not accept to get actix_web::web::Data
-    Struct
-2. the leptos example of using a db connection just opens a connection every
-   time it
-   needs.[example](https://github.com/leptos-rs/leptos/blob/f6978217fbdfa12dc866fcff62691ed420ba1349/examples/todo_app_sqlite/src/todo.rs#L19)
-   i believe that is incorrect for my application.
-3. i can use a struct inside the app.rs probably but this is incorrect
-   programmatically because the control over the jobs will go to the app.rs and
-   i don't believe that its correct.
-4. i can use the actix actor and implement another actor for the scheduler and
-   i believe that this the best solution.
-5. see what other people did about this.-> currently searching
-
-6. maybe leptos has an implementation for this that i cant see currently.
-
-7. i dont have to use the leptos implementation of routes i can use the actix route and then this
-   will work
-
- *UPDATE*
-i have found a repo that pulled it off [example](https://github.com/MinaMatta98/Leptos-Chatting-Client/blob/7f8ec9def84e1d2b68283563dc70510eb6e99243/src/server_function/mod.rs#L440C11-L440C1
-I am coping from them
-*/
