@@ -42,8 +42,6 @@ async fn main() -> std::io::Result<()> {
             .service(Files::new("/", site_root))
             .wrap(Logger::default())
             .app_data(web::Data::new(scheduler.clone()))
-        // .app_data(web::Data::new(test_string.clone()))
-        //.wrap(middleware::Compress::default())
     })
     .bind(&addr)?
     .run()

@@ -32,7 +32,7 @@ lazy_static::lazy_static! {
 
 #[derive(Clone, Debug)]
 pub struct SchedulerMutex {
-    scheduler: Arc<Mutex<MyScheduler>>,
+    pub scheduler: Arc<Mutex<MyScheduler>>,
 }
 
 impl SchedulerMutex {
@@ -55,7 +55,7 @@ impl SchedulerMutex {
 pub struct MyScheduler {
     sched: JobScheduler,
     water_pump_job_uuid: Uuid,
-    water_pump_job_curret_corn_string: String,
+    pub water_pump_job_curret_corn_string: String,
 }
 impl std::fmt::Debug for MyScheduler {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

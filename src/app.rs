@@ -1,10 +1,11 @@
 use crate::chart::{Chart, ChartConfiguration, ChartData, ChartDataSets, ChartType};
 use anyhow::Result;
-use leptos::*;
+use leptos::{html::Input, *};
 use leptos_meta::*;
 use leptos_router::*;
+use tracing::span;
 use wasm_bindgen::JsCast;
-use web_sys::{console, HtmlCanvasElement};
+use web_sys::{console, HtmlCanvasElement, SubmitEvent};
 
 use cfg_if::cfg_if;
 cfg_if! {
@@ -13,7 +14,6 @@ use crate::utils::pump_water as pump_water_actually;
 use reqwest;
 use tracing::info;
 use crate::my_scheduler::SchedulerMutex;
-use actix_web::web::Data;
 }
 }
 
@@ -26,7 +26,6 @@ use actix_web::web::Data;
 pub fn App(cx: Scope) -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context(cx);
-    dbg!(cx.all_resources());
     view! {
         cx,
 
@@ -54,19 +53,16 @@ pub fn App(cx: Scope) -> impl IntoView {
 #[component]
 fn HomePage(cx: Scope) -> impl IntoView {
     // Creates a reactive value to update the button
-    let (count, set_count) = create_signal(cx, 0);
-    let on_click = move |_| set_count.update(|count| *count += 1);
-
     view! { cx,
-        <div class="card w-96 bg-base-100 shadow-xl prose">
-        <h1 >"Welcome to the garden control system"</h1>
-        <button on:click=on_click>"Click Me: " {count}</button>
-        <TestComponent/>
-        <PumpWaterCheck/>
-        <PumpWaterComponent/>
-        </div>
-        <CanvasComponent/>
-    }
+              <div class="card w-96 bg-base-100 shadow-xl prose flex flex-col justify-evenly items-center">
+            <h1 >"Welcome to the garden control system"</h1>
+            <ChangeCronStringComponent/>
+            <PumpWaterComponent/>
+            <PumpWaterCheck/>
+    < PumpHelpComponent/ >
+            </div>
+            <CanvasComponent/>
+        }
 }
 #[server(CheckPump, "/api")]
 pub async fn check_pump() -> Result<String, ServerFnError> {
@@ -80,22 +76,49 @@ pub async fn check_pump() -> Result<String, ServerFnError> {
     Ok(body)
 }
 
+#[server(GetCronString, "/api")]
+pub async fn get_cron_string(cx: Scope) -> Result<String, ServerFnError> {
+    match leptos_actix::extract(
+        cx,
+        move |scheduler_mutex: actix_web::web::Data<SchedulerMutex>| async move {
+            scheduler_mutex
+                .scheduler
+                .lock()
+                .await
+                .water_pump_job_curret_corn_string
+                .clone()
+        },
+    )
+    .await
+    {
+        Ok(val) => Ok(val),
+        // Ok(val) => val.into(),
+        Err(e) => {
+            tracing::event!(
+                tracing::Level::ERROR,
+                "there was an error in getting the cron string from the scheduler struct {}",
+                e
+            );
+            Err(leptos::ServerFnError::ServerError(
+                "couldn`t get the corn string, having a problem with the server".to_string(),
+            ))
+        }
+    }
+}
 #[server(ChangeCronString, "/api")]
 pub async fn change_corn_string(
     cx: Scope,
     new_cron_string: String,
 ) -> Result<String, ServerFnError> {
-    dbg!(new_cron_string.clone());
     leptos_actix::extract(
         cx,
         move |scheduler: actix_web::web::Data<SchedulerMutex>| {
-            let new_cron_string_2 = new_cron_string.clone();
-            async move {
-                scheduler.change_cron_string(new_cron_string_2).await; //TODO: implenemt result
-            }
+            let new_cron_string = new_cron_string.clone();
+            async move { scheduler.change_cron_string(new_cron_string).await }
         },
     )
-    .await?;
+    .await?
+    .map_err(|_| ServerFnError::ServerError("couldn`t change the cron string".to_string()))?;
     Ok("the function worked".to_string())
 }
 #[server(PumpWater, "/api")]
@@ -129,8 +152,7 @@ fn PumpWaterCheck(cx: Scope) -> impl IntoView {
         class:btn-info=move || { check_pump.version().get() ==0 && !pending.get() }
         class:btn-error=move || {check_pump.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
         && !pending.get() && check_pump.version().get() >0}
-         >" click me to check the pump"</button>
-             <h3>"this is the pump button"</h3>
+         >"test server internet conactivity"</button>
     <p>{move || pending().then_some("waiting for response") } </p>
     <p>{move || check_pump.value().get()} </p>
         }
@@ -141,15 +163,6 @@ fn PumpWaterComponent(cx: Scope) -> impl IntoView {
     let (value, set_value) = create_signal(cx, 0);
     let pump_water = create_action(cx, move |_| async move { pump_water(value()).await });
 
-    // let countdown_to_zero: Action<_, ()> = create_action::<I>(cx, move |&I| async move {
-    //     set_countdown(value.get());
-    //     while countdown.get() != 0 {
-    //         sleep(Duration::from_secs(1)).await;
-    //         set_countdown(countdown.get() - 1);
-    //     }
-    // });
-
-    //NOTE: there could be a problem if i clone the value, will check it now.
     let pending = pump_water.pending();
     view! {cx,
 
@@ -169,20 +182,21 @@ fn PumpWaterComponent(cx: Scope) -> impl IntoView {
         class:btn-info=move || { pump_water.version().get() ==0 && !pending.get() }
         class:btn-error=move || {pump_water.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
         && !pending.get() && pump_water.version().get() >0}
-         >" click me to check the pump"</button>
+         >" pump water"</button>
+    <p>{move || value} </p>
     <p>{move || pending().then_some("waiting for response") } </p>
     <p>{move || pump_water.value().get()} </p>
-    <p>{move || value} </p>
         }
 }
 
+#[allow(unused_braces)]
 #[component]
 fn CanvasComponent(cx: Scope) -> impl IntoView {
     let id = create_memo::<String>(cx, |t| {
         t.cloned()
             .unwrap_or_else(|| uuid::Uuid::new_v4().to_string())
     });
-    let canvas = view! {cx, <canvas id=id/>};
+    let my_canvas = view! {cx, <canvas id=id/>};
     create_effect(cx, move |_| {
         console::log_2(
             &serde_wasm_bindgen::to_value("id").unwrap(),
@@ -228,18 +242,94 @@ fn CanvasComponent(cx: Scope) -> impl IntoView {
             );
         }
     });
-    view! {cx,{canvas}}
+    view! {cx,{my_canvas}}
 }
 #[component]
-fn TestComponent(cx: Scope) -> impl IntoView {
-    let test = create_action(cx, move |_| async move {
-        change_corn_string(cx, "1/5 * * * * * *".to_string()).await
+fn ChangeCronStringComponent(cx: Scope) -> impl IntoView {
+    let call_action = create_action(cx, move |cron_string: &String| {
+        let cron_string = cron_string.clone();
+        async move { change_corn_string(cx, cron_string).await }
     });
-    view! {cx,
-    <button class="btn btn-primary" on:click= move |ev| {
+    let stable = create_resource(cx, || (), move |_| async move { get_cron_string(cx).await });
+    let server_cron_string = stable
+        .read(cx)
+        .map(|val| {
+            val.expect("there was en error whth ther server cron string")
+            // .expect("there was en error whth ther server cron string")
+        })
+        .unwrap_or("there was en error whth ther server cron string".to_string());
+    let (cron_string, set_cron_string) = create_signal(cx, server_cron_string);
+
+    let input_element: NodeRef<Input> = create_node_ref(cx);
+    let on_submit = move |ev: SubmitEvent| {
+        // stop the page from reloading!
         ev.prevent_default();
-        test.dispatch(5);
-        }
-     >"click here to test"</button>
+
+        // here, we'll extract the value from the input
+        let value = input_element()
+            // event handlers can only fire after the view
+            // is mounted to the DOM, so the `NodeRef` will be `Some`
+            .expect("<input> to exist")
+            // `NodeRef` implements `Deref` for the DOM element type
+            // this means we can call`HtmlInputElement::value()`
+            // to get the current value of the input
+            .value();
+        set_cron_string(value);
+        call_action.dispatch(cron_string.get());
+    };
+    view! {cx,
+        <form on:submit=on_submit
+            class="flex flex-col items-center">
+        <input type="text"
+            value=cron_string
+            node_ref=input_element
+            class="input w-full max-w-xs  input-ghost input-bordered input-primary"
+        />
+        <input type="submit" value="Send new cron string" class="btn btn-primary btn-outline"/>
+    </form>
+    <p>"current cron string is: " {cron_string}</p>
     }
+}
+#[component]
+fn StatComponet(cx: Scope) -> impl IntoView {
+    // Creates a reactive value to update the button
+
+    view! { cx,
+                <div class="stat flex flex-row-reverse items-center justify-evenly">
+      <div class="stat-figure text-secondary">
+        <div class="avatar online">
+          <div class="w-16 rounded-full">
+            <img class="m-0" src="icons/lion-svgrepo-com.svg" />
+          </div>
+        </div>
+      </div>
+      <div>
+      <div class="stat-value">"86%"</div>
+      <div class="stat-title">"Tasks done"</div>
+      <div class="stat-desc text-secondary">"31 tasks remaining"</div>
+      </div>
+    </div>
+          }
+}
+#[component]
+fn PumpHelpComponent(cx: Scope) -> impl IntoView {
+    // Creates a reactive value to update the button
+
+    view! { cx,
+        <div class="backdrop-blur-sm collapse ">
+      <input type="checkbox" />
+      <div class="collapse-title text-xl font-medium">
+    " Click me to show/hide help menu "
+      </div>
+      <div class="collapse-content">
+      <h3>"Hello! this is the pump control platform"</h3>
+        <h4>"there are 3 buttons to chose from"</h4>
+        <ul>
+        <li>" to check if the pump has internet connection press the CHECK INTERNET button, "</li>
+        <li>"to activate the pump manually slide the slider to the desired amount of seconds and press the PUMP WATER button"</li>
+        <li>"to change the schedule string press the CHANGE SCHEDULE STRING after inserting the string"</li>
+        </ul>
+      </div>
+    </div>
+              }
 }
