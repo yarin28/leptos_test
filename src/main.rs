@@ -26,6 +26,7 @@ async fn main() -> std::io::Result<()> {
     let _ = PumpWater::register();
     let _ = CheckPump::register();
     let _ = ChangeCronString::register();
+    let _ = CancelPump::register();
     let routes = generate_route_list(|cx| view! { cx, <App/> });
     //added the line below to register the "api" endpoint.
     HttpServer::new(move || {
