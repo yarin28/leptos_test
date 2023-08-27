@@ -10,6 +10,7 @@ crate-type = ["cdylib", "rlib"]
 #leptos
 actix-files = { version = "0.6", optional = true }
 actix-web = { version = "4", optional = true, features = ["macros"] }
+actix= { version = "0.13.0", optional = true }
 console_error_panic_hook = "0.1"
 cfg-if = "1"
 leptos = { version = "0.3.1", default-features = false, features = ["serde"] }
@@ -24,6 +25,7 @@ serde = { version = "1.0.163", features = ["derive"] }
 rppal = { version = "0.14.1", features = ["hal"], optional = true }
 embedded-hal = { version = "0.2.7", optional = true }
 thiserror = "1.0.40"
+futures = { version = "0.3", optional = true ,default-features = false }
 #logger
  
 log = {version = "0.4.17"}
@@ -41,7 +43,7 @@ lazy_static = "1.4.0"
 
 [features]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
-ssr = ["dep:tracing", "dep:tracing-actix-web", "dep:env_logger", "dep:tracing-appender", "dep:tracing-appender", "dep:tracing-subscriber", "dep:actix-files", "dep:rppal", "dep:embedded-hal", "dep:actix-web", "dep:leptos_actix", "leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr"]
+ssr = ["dep:tracing", "dep:actix", "dep:tracing-actix-web", "dep:env_logger", "dep:tracing-appender", "dep:tracing-appender", "dep:tracing-subscriber", "dep:actix-files", "dep:rppal", "dep:embedded-hal", "dep:actix-web", "dep:leptos_actix", "leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr"]
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name   

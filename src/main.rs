@@ -7,6 +7,7 @@ async fn main() -> std::io::Result<()> {
     use leptos::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
     // use leptos_start::app::ChangeCronString;
+    use crate::utils::LowLevelHandler;
     use leptos_start::app::CheckPump;
     use leptos_start::app::PumpWater;
     use leptos_start::app::*;
@@ -20,6 +21,7 @@ async fn main() -> std::io::Result<()> {
         .init();
     info!("started the server");
     let scheduler = SchedulerMutex::new().await.unwrap();
+    let low_level_handler = LowLevelHandler::new();
     let conf = get_configuration(None).await.unwrap();
     let addr = conf.leptos_options.site_addr;
     // Generate the list of routes in your Leptos App
