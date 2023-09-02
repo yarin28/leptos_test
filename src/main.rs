@@ -1,18 +1,21 @@
 #[cfg(feature = "ssr")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    use actix::prelude::*;
     use actix_files::Files;
     use actix_web::middleware::Logger;
     use actix_web::*;
     use leptos::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
     // use leptos_start::app::ChangeCronString;
-    use crate::utils::LowLevelHandler;
     use leptos_start::app::CheckPump;
     use leptos_start::app::PumpWater;
     use leptos_start::app::*;
     use leptos_start::my_scheduler::*;
+    use leptos_start::utils::LowLevelHandler;
     use tracing::info;
+    // let low_level_handler = LowLevelHandler { pump_relay_pin: 4 }.start();
+    let low_level_handler = LowLevelHandler::new().start();
     let file_appender = tracing_appender::rolling::daily("./logs", "log_of_day");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::fmt()
@@ -21,7 +24,6 @@ async fn main() -> std::io::Result<()> {
         .init();
     info!("started the server");
     let scheduler = SchedulerMutex::new().await.unwrap();
-    let low_level_handler = LowLevelHandler::new();
     let conf = get_configuration(None).await.unwrap();
     let addr = conf.leptos_options.site_addr;
     // Generate the list of routes in your Leptos App
@@ -44,6 +46,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(Files::new("/", site_root))
             .wrap(Logger::default())
+            .app_data(web::Data::new(low_level_handler.clone()))
             .app_data(web::Data::new(scheduler.clone()))
     })
     .bind(&addr)?

@@ -1,3 +1,4 @@
+#![feature(async_closure)]
 use crate::chart::{Chart, ChartConfiguration, ChartData, ChartDataSets, ChartType};
 use anyhow::Result;
 use leptos::{html::Input, *};
@@ -11,10 +12,11 @@ use web_sys::{console, HtmlCanvasElement, SubmitEvent};
 use cfg_if::cfg_if;
 cfg_if! {
 if #[cfg(feature = "ssr")] {
-use crate::utils::pump_water as pump_water_actually;
 use reqwest;
 use tracing::info;
 use crate::my_scheduler::SchedulerMutex;
+use crate::utils::*;
+use actix::prelude::*;
 }
 }
 
@@ -79,9 +81,49 @@ pub async fn check_pump() -> Result<String, ServerFnError> {
 }
 
 #[server(CancelPump, "/api")]
-pub async fn cancel_pump() -> Result<String, ServerFnError> {
-    todo!();
-    Ok("canceld the pump".to_string())
+pub async fn cancel_pump(cx: Scope) -> Result<String, ServerFnError> {
+    tracing::event!(tracing::Level::INFO, "inside the cancel pump");
+    match leptos_actix::extract(
+        cx,
+        move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
+            tracing::event!(tracing::Level::INFO, "inside the leptos_actix::extract");
+            // let test: () = low_level_handeler;
+            match low_level_handeler
+                .send(LowLevelHandlerCommand::OpenRelayImmediately)
+                .await
+            {
+                Ok(t) => {
+                    tracing::event!(
+                        tracing::Level::INFO,
+                        "calling the low level handeler returnd {t:?}"
+                    );
+                    Ok(t)
+                }
+                Err(e) => {
+                    tracing::event!(
+                        tracing::Level::ERROR,
+                        "calling the low level handeler returnd {e}"
+                    );
+                    Err(e)
+                }
+            }
+        },
+    )
+    .await
+    {
+        Ok(val) => Ok(format!("the cancel worked! {val:?}")),
+        // Ok(val) => val.into(),
+        Err(e) => {
+            tracing::event!(
+                tracing::Level::ERROR,
+                "there was an error in ther cancel pump function{}",
+                e
+            );
+            Err(leptos::ServerFnError::ServerError(format!(
+                "couldn`t get the corn string, having a problem with the server{e}"
+            )))
+        }
+    }
 }
 #[server(GetCronString, "/api")]
 pub async fn get_cron_string(cx: Scope) -> Result<String, ServerFnError> {
@@ -129,10 +171,54 @@ pub async fn change_corn_string(
     Ok("the function worked".to_string())
 }
 #[server(PumpWater, "/api")]
-pub async fn pump_water(seconds: usize) -> Result<String, ServerFnError> {
-    match pump_water_actually(seconds).await {
-        Err(e) => Err(ServerFnError::ServerError(e.to_string())),
-        _ => Ok("there was no error from the server and the pump worked ".to_string()),
+pub async fn pump_water(cx: Scope) -> Result<String, ServerFnError> {
+    //TODO: find a way to get value form socpe, change the way my_scheduler calls the pump water
+    //function.
+    tracing::event!(
+        tracing::Level::INFO,
+        "inside the server function - water pump"
+    );
+    value = cx. 
+    match leptos_actix::extract(
+        cx,
+        move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
+            tracing::event!(tracing::Level::INFO, "inside the leptos_actix::extract");
+            // let test: () = low_level_handeler;
+            match low_level_handeler
+                .send(LowLevelHandlerCommand::CloseRelayFor(seconds))
+                .await
+            {
+                Ok(t) => {
+                    tracing::event!(
+                        tracing::Level::INFO,
+                        "calling the low level handeler returnd {t:?}"
+                    );
+                    Ok(t)
+                }
+                Err(e) => {
+                    tracing::event!(
+                        tracing::Level::ERROR,
+                        "calling the low level handeler returnd {e}"
+                    );
+                    Err(e)
+                }
+            }
+        },
+    )
+    .await
+    {
+        Ok(val) => Ok(format!("the cancel worked! {val:?}")),
+        // Ok(val) => val.into(),
+        Err(e) => {
+            tracing::event!(
+                tracing::Level::ERROR,
+                "there was an error in ther cancel pump function{}",
+                e
+            );
+            Err(leptos::ServerFnError::ServerError(format!(
+                "couldn`t get the corn string, having a problem with the server{e}"
+            )))
+        }
     }
 }
 
@@ -168,7 +254,7 @@ fn PumpWaterCheck(cx: Scope) -> impl IntoView {
 #[component]
 fn PumpWaterComponent(cx: Scope) -> impl IntoView {
     let (value, set_value) = create_signal(cx, 0);
-    let pump_water = create_action(cx, move |_| async move { pump_water(value()).await });
+    let pump_water = create_action(cx, move |_| async move { pump_water(value(), cx).await });
 
     let mut countdown_value = value.get();
     countdown_value = 1000;
@@ -307,7 +393,8 @@ fn ChangeCronStringComponent(cx: Scope) -> impl IntoView {
 }
 #[component]
 fn CancelPumpComponent(cx: Scope) -> impl IntoView {
-    let cancel_pump = create_action(cx, |_| async move { cancel_pump().await });
+    let cx2 = cx;
+    let cancel_pump = create_action(cx, move |_| async move { cancel_pump(cx2).await });
     let pending = cancel_pump.pending();
     view! {cx,
         <button class="btn btn-primary" on:click= move |ev| {

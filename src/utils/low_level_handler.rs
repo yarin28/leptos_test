@@ -17,23 +17,34 @@ use tracing::{event, info, instrument, Level};
 //     info!("the rppal turnd off the relay");
 //     Ok(pin)
 // }
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum LowLevelHandlerCommand {
     CloseRelayFor(usize),
-    OpenRelayImindatly,
+    OpenRelayImmediately,
 }
 impl Message for LowLevelHandlerCommand {
     type Result = Result<bool, std::io::Error>;
 }
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct LowLevelHandler {
-    pump_relay_pin: u8,
+    pub pump_relay_pin: u8,
+    pub close_immediately: bool,
 }
 impl LowLevelHandler {
-    pub async fn new() -> Result<Self> {
-        Ok(LowLevelHandler {
+    pub fn new() -> Self {
+        //i dont belive this function has a possability to fail so i wont use result.
+        LowLevelHandler {
             pump_relay_pin: PUMP_RELAY_PIN,
-        })
+            close_immediately: false,
+        }
+    }
+    pub fn say_hello(&self) {
+        println!("hello!")
+    }
+}
+impl Default for LowLevelHandler {
+    fn default() -> Self {
+        LowLevelHandler::new()
     }
 }
 impl Actor for LowLevelHandler {
@@ -56,28 +67,47 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
         println!("the msg is -> {:?}", msg);
         match msg {
             LowLevelHandlerCommand::CloseRelayFor(seconds) => {
-                futures::executor::block_on(async move { pump_water(seconds).await });
+                futures::executor::block_on(async move { self.pump_water(seconds).await });
             }
-            LowLevelHandlerCommand::OpenRelayImindatly => {
-                event!(Level::WARN, "the msg is -> {:?}", msg)
+            LowLevelHandlerCommand::OpenRelayImmediately => {
+                self.close_immediately = true;
             }
         }
         Ok(true)
     }
 }
 
-#[instrument(fields(seconds))]
-pub async fn pump_water(seconds: usize) -> Result<&'static str> {
-    // event!(
-    //     Level::INFO,
-    //     "ENTERD the pump_water_function and will be here for {:?}",
-    //     seconds.to_string()
-    // );
-    sleep(Duration::from_secs(seconds.try_into().unwrap())).await;
-    // event!(
-    //     Level::INFO,
-    //     "EXITING the pump_water_function and after being here for {:?}",
-    //     seconds.to_string()
-    // );
-    Ok("gogo gaga")
+impl LowLevelHandler {
+    #[instrument(fields(seconds))]
+    pub async fn pump_water(&mut self, seconds: usize) -> Result<&'static str> {
+        event!(
+            Level::INFO,
+            "ENTERD the pump_water_function and will be here for {:?}",
+            seconds.to_string()
+        );
+        let mut i = 0;
+        let mut close_relay_immediately = false;
+        while i < seconds && close_relay_immediately == false {
+            sleep(Duration::from_secs(1)).await;
+            if self.close_immediately == true {
+                event!(Level::INFO, "turned close_immediately to true");
+                close_relay_immediately = true;
+            }
+            i += 1;
+        }
+
+        event!(Level::INFO, "exited the pump water function");
+        // event!(
+        //     Level::INFO,
+        //     "ENTERD the pump_water_function and will be here for {:?}",
+        //     seconds.to_string()
+        // );
+        // sleep(Duration::from_secs(seconds.try_into().unwrap())).await;
+        // event!(
+        //     Level::INFO,
+        //     "EXITING the pump_water_function and after being here for {:?}",
+        //     seconds.to_string()
+        // );
+        Ok("finished the pumping")
+    }
 }
