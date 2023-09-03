@@ -171,14 +171,11 @@ pub async fn change_corn_string(
     Ok("the function worked".to_string())
 }
 #[server(PumpWater, "/api")]
-pub async fn pump_water(cx: Scope) -> Result<String, ServerFnError> {
-    //TODO: find a way to get value form socpe, change the way my_scheduler calls the pump water
-    //function.
+pub async fn pump_water(cx: Scope, seconds: usize) -> Result<String, ServerFnError> {
     tracing::event!(
         tracing::Level::INFO,
         "inside the server function - water pump"
     );
-    value = cx. 
     match leptos_actix::extract(
         cx,
         move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
@@ -254,7 +251,7 @@ fn PumpWaterCheck(cx: Scope) -> impl IntoView {
 #[component]
 fn PumpWaterComponent(cx: Scope) -> impl IntoView {
     let (value, set_value) = create_signal(cx, 0);
-    let pump_water = create_action(cx, move |_| async move { pump_water(value(), cx).await });
+    let pump_water = create_action(cx, move |_| async move { pump_water(cx, value()).await });
 
     let mut countdown_value = value.get();
     countdown_value = 1000;
