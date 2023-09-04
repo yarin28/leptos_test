@@ -1,4 +1,5 @@
 use actix::prelude::*;
+use actix::AsyncContext;
 use anyhow::Result;
 // use embedded_hal::digital::v2::OutputPin;
 // use rppal::gpio::Gpio;
@@ -29,6 +30,7 @@ impl Message for LowLevelHandlerCommand {
 pub struct LowLevelHandler {
     pub pump_relay_pin: u8,
     pub close_immediately: bool,
+    pub water_pump_handler: Option<SpawnHandle>,
 }
 impl LowLevelHandler {
     pub fn new() -> Self {
@@ -36,6 +38,7 @@ impl LowLevelHandler {
         LowLevelHandler {
             pump_relay_pin: PUMP_RELAY_PIN,
             close_immediately: false,
+            water_pump_handler: None,
         }
     }
     pub fn say_hello(&self) {
@@ -61,16 +64,25 @@ impl Actor for LowLevelHandler {
 impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
     type Result = Result<bool, std::io::Error>;
 
-    #[instrument(fields(msg))]
+    // #[instrument(fields(msg))]
     fn handle(&mut self, msg: LowLevelHandlerCommand, ctx: &mut Context<Self>) -> Self::Result {
         event!(Level::WARN, "the msg is -> {:?}", msg);
-        println!("the msg is -> {:?}", msg);
         match msg {
             LowLevelHandlerCommand::CloseRelayFor(seconds) => {
-                futures::executor::block_on(async move { self.pump_water(seconds).await });
+                event!(Level::INFO, "inside match statement");
+                self.water_pump_handler = Some(ctx.run_interval(
+                    Duration::from_secs((seconds + 1).try_into().unwrap()),
+                    move |_, _| {
+                        event!(Level::INFO, "inside the arrow funct");
+                        Self::stupid_pump_water(seconds);
+                    },
+                ))
             }
             LowLevelHandlerCommand::OpenRelayImmediately => {
-                self.close_immediately = true;
+                ctx.cancel_future(
+                    self.water_pump_handler
+                        .expect("called cancel without a job running"),
+                );
             }
         }
         Ok(true)
@@ -79,24 +91,46 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
 
 impl LowLevelHandler {
     #[instrument(fields(seconds))]
-    pub async fn pump_water(&mut self, seconds: usize) -> Result<&'static str> {
+    pub fn pump_water(&mut self, seconds: usize) -> Result<&'static str> {
         event!(
             Level::INFO,
             "ENTERD the pump_water_function and will be here for {:?}",
             seconds.to_string()
         );
-        let mut i = 0;
-        let mut close_relay_immediately = false;
-        while i < seconds && close_relay_immediately == false {
-            sleep(Duration::from_secs(1)).await;
-            if self.close_immediately == true {
-                event!(Level::INFO, "turned close_immediately to true");
-                close_relay_immediately = true;
-            }
-            i += 1;
-        }
+        std::thread::sleep(Duration::from_secs(seconds.try_into().unwrap()));
 
         event!(Level::INFO, "exited the pump water function");
+        // event!(
+        //     Level::INFO,
+        //     "ENTERD the pump_water_function and will be here for {:?}",
+        //     seconds.to_string()
+        // );
+        // sleep(Duration::from_secs(seconds.try_into().unwrap())).await;
+        // event!(
+        //     Level::INFO,
+        //     "EXITING the pump_water_function and after being here for {:?}",
+        //     seconds.to_string()
+        // );
+        Ok("finished the pumping")
+    }
+    // fn call_pump_water(&mut self, seconds: usize) -> Result<()> {
+    //     actix_web::rt::spawn(async move {
+    //         let client = self.close_immediately = true;
+    //         let res = client.get(&url).send().await;
+    //         if res.is_ok() {
+    //             info!("It works!");
+    //         }
+    //     })
+    // }
+    fn stupid_pump_water(seconds: usize) -> Result<&'static str> {
+        event!(
+            Level::INFO,
+            "ENTERD the pump_water_function and will be here for {:?}",
+            seconds.to_string()
+        );
+        std::thread::sleep(Duration::from_secs(seconds.try_into().unwrap()));
+
+        event!(Level::INFO, "EXITED the pump water function");
         // event!(
         //     Level::INFO,
         //     "ENTERD the pump_water_function and will be here for {:?}",
