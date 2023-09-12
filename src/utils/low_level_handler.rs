@@ -70,13 +70,10 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
         match msg {
             LowLevelHandlerCommand::CloseRelayFor(seconds) => {
                 event!(Level::INFO, "inside match statement");
-                self.water_pump_handler = Some(ctx.run_interval(
-                    Duration::from_secs((seconds + 1).try_into().unwrap()),
-                    move |_, _| {
-                        event!(Level::INFO, "inside the arrow funct");
-                        Self::stupid_pump_water(seconds);
-                    },
-                ))
+                self.water_pump_handler = Some(ctx.spawn(move |_, _| {
+                    event!(Level::INFO, "inside the arrow funct");
+                    Self::stupid_pump_water(seconds);
+                }))
             }
             LowLevelHandlerCommand::OpenRelayImmediately => {
                 ctx.cancel_future(
