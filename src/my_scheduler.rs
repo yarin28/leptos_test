@@ -70,11 +70,22 @@ impl SchedulerMutex {
         Ok(scheduler_mutex)
     }
 
+    pub async fn change_seconds_to_pump_water(&self, new_seconds: usize) -> Result<()> {
+        self.scheduler
+            .lock()
+            .await
+            .change_seconds_to_pump_water_in_config(new_seconds)
+            .unwrap()
+            .change_job(None, Some(new_seconds))
+            .await
+    }
     pub async fn change_cron_string(&self, new_cron_string: String) -> Result<()> {
         self.scheduler
             .lock()
             .await
-            .change_cron_string_in_job(new_cron_string)
+            .change_cron_string_in_config(new_cron_string.clone())
+            .unwrap()
+            .change_job(Some(new_cron_string), None)
             .await
     }
     // #[instrument(skip(self), fields(self.scheduler.water_pump_job_uuid = %self.scheduler.lock().await.water_pump_job_uuid,self.scheduler.water_pump_job_curret_corn_string= %self.scheduler.lock().await.water_pump_job_curret_corn_string))]
@@ -85,41 +96,41 @@ pub struct MyScheduler {
     pub water_pump_job_curret_corn_string: String,
     pub config: Config,
 }
-pub struct MySchedulerBuilder {
-    sched: JobScheduler,
-    water_pump_job_uuid: Uuid,
-    pub water_pump_job_curret_corn_string: String,
-    pub config: Config,
-}
-impl MySchedulerBuilder {
-    fn sched(&mut self, sched: JobScheduler) -> &mut Self {
-        self.sched = sched;
-        self
-    }
-    fn water_pump_job_uuid(&mut self, water_pump_job_uuid: Uuid) -> &mut Self {
-        self.water_pump_job_uuid = water_pump_job_uuid;
-        self
-    }
-    fn water_pump_job_curret_corn_string(
-        &mut self,
-        water_pump_job_curret_corn_string: String,
-    ) -> &mut Self {
-        self.water_pump_job_curret_corn_string = water_pump_job_curret_corn_string;
-        self
-    }
-    fn config(&mut self, config: Config) -> &mut Self {
-        self.config = config;
-        self
-    }
-    //TODO: must find a better name for this function!
-    //it sopose to mean that you *have* to pass the sender
-    pub fn default_config_without_sender(sender: Addr<LowLevelHandler>) -> Config {
-        Config::new(sender)
-            .cron_string(env!("CRON_STRING").to_string())
-            .seconds_to_pump_water(env!("SECONDS_TO_PUMP_WATER").parse::<usize>().unwrap())
-            .build()
-    }
-}
+// pub struct MySchedulerBuilder {
+//     sched: JobScheduler,
+//     water_pump_job_uuid: Uuid,
+//     pub water_pump_job_curret_corn_string: String,
+//     pub config: Config,
+// }
+// impl MySchedulerBuilder {
+//     fn sched(&mut self, sched: JobScheduler) -> &mut Self {
+//         self.sched = sched;
+//         self
+//     }
+//     fn water_pump_job_uuid(&mut self, water_pump_job_uuid: Uuid) -> &mut Self {
+//         self.water_pump_job_uuid = water_pump_job_uuid;
+//         self
+//     }
+//     fn water_pump_job_curret_corn_string(
+//         &mut self,
+//         water_pump_job_curret_corn_string: String,
+//     ) -> &mut Self {
+//         self.water_pump_job_curret_corn_string = water_pump_job_curret_corn_string;
+//         self
+//     }
+//     fn config(&mut self, config: Config) -> &mut Self {
+//         self.config = config;
+//         self
+//     }
+//     //TODO: must find a better name for this function!
+//     //it sopose to mean that you *have* to pass the sender
+//     pub fn default_config_without_sender(sender: Addr<LowLevelHandler>) -> Config {
+//         Config::new(sender)
+//             .cron_string(env!("CRON_STRING").to_string())
+//             .seconds_to_pump_water(env!("SECONDS_TO_PUMP_WATER").parse::<usize>().unwrap())
+//             .build()
+//     }
+// }
 impl std::fmt::Debug for MyScheduler {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MyScheduler")
@@ -147,13 +158,37 @@ impl MyScheduler {
             config,
         })
     }
-    #[instrument(skip(self))]
-    pub async fn change_cron_string_in_job(&mut self, new_cron_string: String) -> Result<()> {
+    fn change_cron_string_in_config(&mut self, new_cron_string: String) -> Result<&mut Self> {
+        // the end goal is to validate the cron string here.
         info!(
             "if current- {:?} != new-{:?}",
             self.water_pump_job_curret_corn_string, new_cron_string
         );
-        if new_cron_string != self.water_pump_job_curret_corn_string {
+        self.config.cron_string = new_cron_string;
+        Ok(self)
+    }
+    fn change_seconds_to_pump_water_in_config(&mut self, seconds: usize) -> Result<&mut Self> {
+        info!(
+            "if current- {:?} != new-{:?}",
+            self.config.seconds_to_pump_water, seconds
+        );
+        self.config.seconds_to_pump_water = seconds;
+        Ok(self)
+    }
+    //the function create a new job with paramenter from *config*
+    //i want to remove the parametes that the function gets but i need to check if the current
+    //string in the config is deffrent from the current string inside the job.
+    pub async fn change_job(
+        &mut self,
+        new_cron_string: Option<String>,
+        new_seconds: Option<usize>,
+    ) -> Result<()> {
+        if (new_cron_string
+            .clone()
+            .unwrap_or(self.water_pump_job_curret_corn_string.clone())
+            != self.water_pump_job_curret_corn_string)
+            || new_seconds.is_some()
+        {
             self.sched
                 .remove(&self.water_pump_job_uuid)
                 .await
@@ -166,7 +201,7 @@ impl MyScheduler {
                 .add(jj)
                 .await
                 .expect("could not add the new job to Scheduler");
-            self.water_pump_job_curret_corn_string = new_cron_string;
+            self.water_pump_job_curret_corn_string = self.config.cron_string.clone();
             self.water_pump_job_uuid = new_uuid;
             // self.sched
             //     .start()
@@ -198,7 +233,7 @@ impl MyScheduler {
                     // info!("the cron string is - {:?}", file_config.cron_string);
                     match low_level_sender_address
                         .send(crate::utils::LowLevelHandlerCommand::CloseRelayFor(
-                            env!("SECONDS_TO_PUMP_WATER").parse::<usize>().unwrap(),
+                            config.seconds_to_pump_water,
                         ))
                         .await
                     {
@@ -244,7 +279,7 @@ mod tests {
                 scheduler_mutex_cloned
                     .lock()
                     .await
-                    .change_cron_string_in_job(new_str)
+                    .change_job(Some(new_str), None)
                     .await
                     .expect("there was an error with creating the new water pump job");
                 // info!("the job data is{:?}", jj.job_data());

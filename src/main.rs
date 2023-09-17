@@ -8,7 +8,9 @@ async fn main() -> std::io::Result<()> {
     use leptos::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
     // use leptos_start::app::ChangeCronString;
+    use leptos_start::app::ChangeSecondsToPumpWater;
     use leptos_start::app::CheckPump;
+    use leptos_start::app::GetSecondsToPumpWater;
     use leptos_start::app::PumpWater;
     use leptos_start::app::*;
     use leptos_start::my_scheduler::*;
@@ -33,6 +35,8 @@ async fn main() -> std::io::Result<()> {
     let _ = CheckPump::register();
     let _ = ChangeCronString::register();
     let _ = CancelPump::register();
+    let _ = ChangeSecondsToPumpWater::register();
+    let _ = GetSecondsToPumpWater::register();
     let routes = generate_route_list(|cx| view! { cx, <App/> });
     //added the line below to register the "api" endpoint.
     HttpServer::new(move || {

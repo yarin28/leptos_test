@@ -1,15 +1,19 @@
 use actix::prelude::*;
 use actix::AsyncContext;
 use anyhow::Result;
+use core::future::Future;
 // use embedded_hal::digital::v2::OutputPin;
 // use rppal::gpio::Gpio;
 use futures;
+use tokio::task::JoinHandle;
 use tokio::{
     sync::mpsc,
     time::{sleep, Duration},
 };
 const PUMP_RELAY_PIN: u8 = 4;
 use tracing::{event, info, instrument, Level};
+
+use super::relay::RelayActor;
 // pub async fn pump_water(seconds: usize) -> Result<impl OutputPin> {
 //     let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
 //     pin.set_high();
@@ -24,13 +28,13 @@ pub enum LowLevelHandlerCommand {
     OpenRelayImmediately,
 }
 impl Message for LowLevelHandlerCommand {
-    type Result = Result<bool, std::io::Error>;
+    type Result = Result<String, std::io::Error>;
 }
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub struct LowLevelHandler {
     pub pump_relay_pin: u8,
     pub close_immediately: bool,
-    pub water_pump_handler: Option<SpawnHandle>,
+    pub water_pump_handler: Option<tokio::task::JoinHandle<()>>,
 }
 impl LowLevelHandler {
     pub fn new() -> Self {
@@ -53,42 +57,46 @@ impl Default for LowLevelHandler {
 impl Actor for LowLevelHandler {
     type Context = Context<Self>;
 
-    fn started(&mut self, ctx: &mut Context<Self>) {
-        println!("Actor is alive");
+    fn started(&mut self, _ctx: &mut Context<Self>) {
+        println!("LowLevelHandler is alive");
     }
 
-    fn stopped(&mut self, ctx: &mut Context<Self>) {
-        println!("Actor is stopped");
+    fn stopped(&mut self, _ctx: &mut Context<Self>) {
+        println!("LowLevelHandler is stopped");
     }
 }
 impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
-    type Result = Result<bool, std::io::Error>;
+    type Result = Result<String, std::io::Error>;
 
     // #[instrument(fields(msg))]
     fn handle(&mut self, msg: LowLevelHandlerCommand, ctx: &mut Context<Self>) -> Self::Result {
         event!(Level::WARN, "the msg is -> {:?}", msg);
         match msg {
             LowLevelHandlerCommand::CloseRelayFor(seconds) => {
-                event!(Level::INFO, "inside match statement");
-                self.water_pump_handler = Some(ctx.spawn(move |_, _| {
-                    event!(Level::INFO, "inside the arrow funct");
-                    Self::stupid_pump_water(seconds);
-                }))
-            }
-            LowLevelHandlerCommand::OpenRelayImmediately => {
-                ctx.cancel_future(
-                    self.water_pump_handler
-                        .expect("called cancel without a job running"),
+                event!(Level::INFO, "initiating the stupid_pump_water thread");
+                self.water_pump_handler = Some(actix_web::rt::spawn(async move {
+                    let _res = Self::stupid_pump_water(seconds).await;
+                }));
+                event!(
+                    Level::INFO,
+                    "finished initiating the stupid_pump_water thread"
                 );
+                Ok(format!("opening the relay for {seconds:}"))
             }
+            LowLevelHandlerCommand::OpenRelayImmediately => match &self.water_pump_handler {
+                Some(handler) => {
+                    handler.abort();
+                    Ok("aborted the low level task".to_string())
+                }
+                None => Ok("there is no low level task running".to_string()),
+            },
         }
-        Ok(true)
     }
 }
 
 impl LowLevelHandler {
     #[instrument(fields(seconds))]
-    pub fn pump_water(&mut self, seconds: usize) -> Result<&'static str> {
+    pub async fn pump_water(&mut self, seconds: usize) -> Result<&'static str> {
         event!(
             Level::INFO,
             "ENTERD the pump_water_function and will be here for {:?}",
@@ -119,15 +127,19 @@ impl LowLevelHandler {
     //         }
     //     })
     // }
-    fn stupid_pump_water(seconds: usize) -> Result<&'static str> {
+    async fn stupid_pump_water(seconds: usize) -> Result<&'static str> {
         event!(
             Level::INFO,
-            "ENTERD the pump_water_function and will be here for {:?}",
+            "ENTERD the stupid_pump_water and will be here for {:?}",
             seconds.to_string()
         );
-        std::thread::sleep(Duration::from_secs(seconds.try_into().unwrap()));
+        sleep(Duration::from_secs(seconds.try_into().unwrap())).await;
 
-        event!(Level::INFO, "EXITED the pump water function");
+        event!(
+            Level::INFO,
+            "EXITING the stupid_pump_water and was  here for {:?}",
+            seconds.to_string()
+        );
         // event!(
         //     Level::INFO,
         //     "ENTERD the pump_water_function and will be here for {:?}",
