@@ -16,6 +16,7 @@ pub struct Config {
     pub low_level_handler_sender: Addr<LowLevelHandler>,
 }
 impl Config {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(low_level_handler_sender: Addr<LowLevelHandler>) -> ConfigBuilder {
         ConfigBuilder {
             cron_string: env!("CRON_STRING").to_string(),

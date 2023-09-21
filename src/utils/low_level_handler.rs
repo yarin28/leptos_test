@@ -1,16 +1,9 @@
 use actix::prelude::*;
-use actix::AsyncContext;
 use anyhow::Result;
-use core::future::Future;
 use tokio_util::sync::CancellationToken;
 // use embedded_hal::digital::v2::OutputPin;
 // use rppal::gpio::Gpio;
-use futures;
-use tokio::task::JoinHandle;
-use tokio::{
-    sync::mpsc,
-    time::{sleep, Duration},
-};
+use tokio::time::Duration;
 const PUMP_RELAY_PIN: u8 = 4;
 use tracing::{event, info, instrument, Level};
 
@@ -71,7 +64,7 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
     type Result = Result<String, std::io::Error>;
 
     // #[instrument(fields(msg))]
-    fn handle(&mut self, msg: LowLevelHandlerCommand, ctx: &mut Context<Self>) -> Self::Result {
+    fn handle(&mut self, msg: LowLevelHandlerCommand, _ctx: &mut Context<Self>) -> Self::Result {
         event!(Level::WARN, "the msg is -> {:?}", msg);
         match msg {
             LowLevelHandlerCommand::CloseRelayFor(seconds) => {

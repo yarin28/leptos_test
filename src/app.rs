@@ -1,11 +1,8 @@
-#![feature(async_closure)]
 use crate::chart::{Chart, ChartConfiguration, ChartData, ChartDataSets, ChartType};
 use anyhow::Result;
 use leptos::{html::Input, *};
 use leptos_meta::*;
 use leptos_router::*;
-use tokio::sync::mpsc;
-use tracing::span;
 use wasm_bindgen::JsCast;
 use web_sys::{console, HtmlCanvasElement, SubmitEvent};
 
@@ -210,8 +207,8 @@ pub async fn change_seconds_to_pump_water(
     leptos_actix::extract(
         cx,
         move |scheduler: actix_web::web::Data<SchedulerMutex>| {
-            let new_seconds = new_seconds;
-            async move { scheduler.change_seconds_to_pump_water(new_seconds).await }
+            let new_seconds2 = new_seconds;
+            async move { scheduler.change_seconds_to_pump_water(new_seconds2).await }
         },
     )
     .await?
@@ -285,13 +282,13 @@ fn PumpWaterCheck(cx: Scope) -> impl IntoView {
             ev.prevent_default();
             check_pump.dispatch(5);
             }
-        class:btn-warning =pending
+        class:btn-warning =move ||pending.get()
         class:btn-success=move || { check_pump.value().get().is_some() && !pending.get() && !check_if_empty(check_pump.value().get())}
         class:btn-info=move || { check_pump.version().get() ==0 && !pending.get() }
         class:btn-error=move || {check_pump.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
         && !pending.get() && check_pump.version().get() >0}
          >"test server internet conactivity"</button>
-    <p>{move || pending().then_some("waiting for response") } </p>
+    <p>{move || pending.get().then_some("waiting for response") } </p>
     <p>{move || check_pump.value().get()} </p>
         }
 }
@@ -299,40 +296,35 @@ fn PumpWaterCheck(cx: Scope) -> impl IntoView {
 #[component]
 fn PumpWaterComponent(cx: Scope) -> impl IntoView {
     let (value, set_value) = create_signal(cx, 0);
-    let pump_water = create_action(cx, move |_| async move { pump_water(cx, value()).await });
+    let pump_water = create_action(
+        cx,
+        move |_| async move { pump_water(cx, value.get()).await },
+    );
 
-    let mut countdown_value = value.get();
-    countdown_value = 1000;
     let pending = pump_water.pending();
     view! {cx,
 
-            <div class="hidden btn-primary btn-warning btn-success btn-error"></div>//NOTE: the
-                //purpuse of the div is to include those classes in the output file, because leptos
-                //calls then with a diffrent syntax then tailwind-cli can see.
-                <input type="range" class="range range-primary" min="1" max="100" value="50" id="myRange" on:input=move|ev|{
-                    ev.prevent_default();
-                    set_value(event_target_value(&ev).parse().unwrap());
-                }/>
-            <button class="btn btn-primary" on:click= move |ev| {
+        <div class="hidden btn-primary btn-warning btn-success btn-error"></div>//NOTE: the
+            //purpuse of the div is to include those classes in the output file, because leptos
+            //calls then with a diffrent syntax then tailwind-cli can see.
+            <input type="range" class="range range-primary" min="1" max="100" value="50" id="myRange" on:input=move|ev|{
                 ev.prevent_default();
-                countdown_value = value.get();
-                pump_water.dispatch(value);
-                }
-            class:btn-warning =pending
-            class:btn-success=move || { pump_water.value().get().is_some() && !pending.get() && !check_if_empty( pump_water.value().get())}
-            class:btn-info=move || { pump_water.version().get() ==0 && !pending.get() }
-            class:btn-error=move || {pump_water.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
-            && !pending.get() && pump_water.version().get() >0}
-             >" pump water"</button>
-        <p>{move || value} </p>
-        <p>{move || pending().then_some("waiting for response") } </p>
-        <p>{move || pump_water.value().get()} </p>
-        <div>
-        <span class="countdown font-mono text-6xl">
-      <span style="--value:{countdown_value}"></span>
-    </span>
-    </div>
+                set_value.set(event_target_value(&ev).parse().unwrap());
+            }/>
+        <button class="btn btn-primary" on:click= move |ev| {
+            ev.prevent_default();
+            pump_water.dispatch(value);
             }
+        class:btn-warning =move ||pending.get()
+        class:btn-success=move || { pump_water.value().get().is_some() && !pending.get() && !check_if_empty( pump_water.value().get())}
+        class:btn-info=move || { pump_water.version().get() ==0 && !pending.get() }
+        class:btn-error=move || {pump_water.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
+        && !pending.get() && pump_water.version().get() >0}
+         >" pump water"</button>
+    <p>{move || value} </p>
+    <p>{move || pending.get().then_some("waiting for response") } </p>
+    <p>{move || pump_water.value().get()} </p>
+        }
 }
 
 #[allow(unused_braces)]
@@ -342,7 +334,7 @@ fn CanvasComponent(cx: Scope) -> impl IntoView {
         t.cloned()
             .unwrap_or_else(|| uuid::Uuid::new_v4().to_string())
     });
-    let my_canvas = view! {cx, <canvas id=id/>};
+    let my_canvas = view! {cx, <canvas id=move ||id.get()/>};
     create_effect(cx, move |_| {
         console::log_2(
             &serde_wasm_bindgen::to_value("id").unwrap(),
@@ -412,7 +404,8 @@ fn ChangeCronStringComponent(cx: Scope) -> impl IntoView {
         ev.prevent_default();
 
         // here, we'll extract the value from the input
-        let value = input_element()
+        let value = input_element
+            .get()
             // event handlers can only fire after the view
             // is mounted to the DOM, so the `NodeRef` will be `Some`
             .expect("<input> to exist")
@@ -420,20 +413,20 @@ fn ChangeCronStringComponent(cx: Scope) -> impl IntoView {
             // this means we can call`HtmlInputElement::value()`
             // to get the current value of the input
             .value();
-        set_cron_string(value);
+        set_cron_string.set(value);
         call_action.dispatch(cron_string.get());
     };
     view! {cx,
         <form on:submit=on_submit
             class="flex flex-col items-center">
         <input type="text"
-            value=cron_string
+            value=move ||cron_string.get()
             node_ref=input_element
             class="input w-full max-w-xs  input-ghost input-bordered input-primary"
         />
         <input type="submit" value="Send new cron string" class="btn btn-primary btn-outline"/>
     </form>
-    <p>"current cron string is: " {cron_string}</p>
+    <p>"current cron string is: " {move ||cron_string.get()}</p>
     }
 }
 #[component]
@@ -462,7 +455,8 @@ fn ChangeSecondsToPumpWaterComponent(cx: Scope) -> impl IntoView {
         ev.prevent_default();
 
         // here, we'll extract the value from the input
-        let value = input_element()
+        let value = input_element
+            .get()
             // event handlers can only fire after the view
             // is mounted to the DOM, so the `NodeRef` will be `Some`
             .expect("<input> to exist")
@@ -470,20 +464,20 @@ fn ChangeSecondsToPumpWaterComponent(cx: Scope) -> impl IntoView {
             // this means we can call`HtmlInputElement::value()`
             // to get the current value of the input
             .value();
-        set_seconds_value(value);
+        set_seconds_value.set(value);
         call_action.dispatch(seconds_value.get());
     };
     view! {cx,
         <form on:submit=on_submit
             class="flex flex-col items-center">
         <input type="text"
-            value=seconds_value
+            value=move ||seconds_value.get()
             node_ref=input_element
             class="input w-full max-w-xs  input-ghost input-bordered input-primary"
         />
         <input type="submit" value="Send amount of seconds to open the pump" class="btn btn-primary btn-outline"/>
     </form>
-    <p>"current amount of seconds to pump: " {seconds_value}</p>
+    <p>"current amount of seconds to pump: " {move||seconds_value.get()}</p>
     }
 }
 #[component]
@@ -496,13 +490,14 @@ fn CancelPumpComponent(cx: Scope) -> impl IntoView {
             ev.prevent_default();
             cancel_pump.dispatch(5);
             }
-        class:btn-warning =pending
+        class:btn-warning =move ||pending.get()
         class:btn-success=move || { cancel_pump.value().get().is_some() && !pending.get() && !check_if_empty(cancel_pump.value().get())}
         class:btn-info=move || { cancel_pump.version().get() ==0 && !pending.get() }
         class:btn-error=move || {cancel_pump.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
         && !pending.get() && cancel_pump.version().get() >0}
          >"cancel_the pump"</button>
-    <p>{move || pending().then_some("waiting for response") } </p>
+    <p>{move || pending.get().then_some("waiting for response") } </p>
+    // <p>{move || pending.try_get().unwrap_or("waiting for response") } </p>
     <p>{move || cancel_pump.value().get()} </p>
         }
 }
