@@ -2,6 +2,7 @@ use actix::prelude::*;
 use actix::AsyncContext;
 use anyhow::Result;
 use core::future::Future;
+use tokio_util::sync::CancellationToken;
 // use embedded_hal::digital::v2::OutputPin;
 // use rppal::gpio::Gpio;
 use futures;
@@ -13,7 +14,6 @@ use tokio::{
 const PUMP_RELAY_PIN: u8 = 4;
 use tracing::{event, info, instrument, Level};
 
-use super::relay::RelayActor;
 // pub async fn pump_water(seconds: usize) -> Result<impl OutputPin> {
 //     let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
 //     pin.set_high();
@@ -35,6 +35,7 @@ pub struct LowLevelHandler {
     pub pump_relay_pin: u8,
     pub close_immediately: bool,
     pub water_pump_handler: Option<tokio::task::JoinHandle<()>>,
+    pub pump_cancellation_token: CancellationToken,
 }
 impl LowLevelHandler {
     pub fn new() -> Self {
@@ -43,6 +44,7 @@ impl LowLevelHandler {
             pump_relay_pin: PUMP_RELAY_PIN,
             close_immediately: false,
             water_pump_handler: None,
+            pump_cancellation_token: CancellationToken::new(),
         }
     }
     pub fn say_hello(&self) {
@@ -74,8 +76,9 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
         match msg {
             LowLevelHandlerCommand::CloseRelayFor(seconds) => {
                 event!(Level::INFO, "initiating the stupid_pump_water thread");
-                self.water_pump_handler = Some(actix_web::rt::spawn(async move {
-                    let _res = Self::stupid_pump_water(seconds).await;
+                let cancelation_token = self.pump_cancellation_token.clone();
+                self.water_pump_handler = Some(tokio::spawn(async move {
+                    let _res = Self::stupid_pump_water(seconds, cancelation_token.clone()).await;
                 }));
                 event!(
                     Level::INFO,
@@ -84,8 +87,9 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
                 Ok(format!("opening the relay for {seconds:}"))
             }
             LowLevelHandlerCommand::OpenRelayImmediately => match &self.water_pump_handler {
-                Some(handler) => {
-                    handler.abort();
+                Some(_handler) => {
+                    self.pump_cancellation_token.cancel();
+                    self.pump_cancellation_token = CancellationToken::new();
                     Ok("aborted the low level task".to_string())
                 }
                 None => Ok("there is no low level task running".to_string()),
@@ -127,30 +131,36 @@ impl LowLevelHandler {
     //         }
     //     })
     // }
-    async fn stupid_pump_water(seconds: usize) -> Result<&'static str> {
+
+    async fn stupid_pump_water(
+        seconds: usize,
+        cancelation_token: CancellationToken,
+    ) -> Result<&'static str> {
         event!(
             Level::INFO,
             "ENTERD the stupid_pump_water and will be here for {:?}",
             seconds.to_string()
         );
-        sleep(Duration::from_secs(seconds.try_into().unwrap())).await;
+        //     let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
+        //     pin.set_high();
+        tokio::select! {
+                    _ = cancelation_token.cancelled() => {
+                        // The token was cancelled
+        //     let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
+        //     pin.set_low();
+            info!("the cancelation_token was canceld and will exit the stupin_pump_water function");
+                    }
+                    _ = tokio::time::sleep(Duration::from_secs(seconds.try_into().unwrap())) => {
+        //     pin.set_low();
+            info!("the stupid_pump_water function waited for {:?} and will exit now ",seconds);
+                    }
+                }
 
         event!(
             Level::INFO,
             "EXITING the stupid_pump_water and was  here for {:?}",
             seconds.to_string()
         );
-        // event!(
-        //     Level::INFO,
-        //     "ENTERD the pump_water_function and will be here for {:?}",
-        //     seconds.to_string()
-        // );
-        // sleep(Duration::from_secs(seconds.try_into().unwrap())).await;
-        // event!(
-        //     Level::INFO,
-        //     "EXITING the pump_water_function and after being here for {:?}",
-        //     seconds.to_string()
-        // );
         Ok("finished the pumping")
     }
 }
