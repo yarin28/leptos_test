@@ -1,5 +1,6 @@
 pub mod app;
 mod chart;
+pub mod components;
 #[cfg(feature = "ssr")]
 pub mod my_scheduler;
 pub mod utils;
