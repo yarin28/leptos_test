@@ -47,15 +47,15 @@ pub fn App(cx: Scope) -> impl IntoView {
 fn HomePage(cx: Scope) -> impl IntoView {
     // Creates a reactive value to update the button
     view! { cx,
-              <div class="card w-96 bg-base-100 shadow-xl prose flex flex-col justify-evenly items-center">
+        <div class="card w-96 bg-base-100 shadow-xl prose flex flex-col justify-evenly items-center">
             <h1 >"Welcome to the garden control system"</h1>
             <ChangeCronStringComponent/>
             <ChangeSecondsToPumpWaterComponent/>
             <PumpWaterComponent/>
             <PumpWaterCheck/>
             <CancelPumpComponent/>
-    < PumpHelpComponent/ >
-            </div>
-            <CanvasComponent/>
-        }
+            < PumpHelpComponent/ >
+        </div>
+        <CanvasComponent/>
+    }
 }

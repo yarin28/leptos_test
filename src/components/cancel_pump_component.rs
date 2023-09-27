@@ -24,14 +24,13 @@ pub fn CancelPumpComponent(cx: Scope) -> impl IntoView {
         && !pending.get() && cancel_pump.version().get() >0}
          >"cancel_the pump"</button>
     <p>{move || pending.get().then_some("waiting for response") } </p>
-    // <p>{move || pending.try_get().unwrap_or("waiting for response") } </p>
     <p>{move || cancel_pump.value().get()} </p>
         }
 }
 #[server(CancelPump, "/api")]
 pub async fn cancel_pump(cx: Scope) -> Result<String, ServerFnError> {
     tracing::event!(tracing::Level::INFO, "inside the cancel pump");
-    match leptos_actix::extract(
+    let res = leptos_actix::extract(
         cx,
         move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
             tracing::event!(tracing::Level::INFO, "inside the leptos_actix::extract");
@@ -57,8 +56,8 @@ pub async fn cancel_pump(cx: Scope) -> Result<String, ServerFnError> {
             }
         },
     )
-    .await
-    {
+    .await;
+    match res {
         Ok(val) => Ok(format!("the cancel worked! {val:?}")),
         // Ok(val) => val.into(),
         Err(e) => {

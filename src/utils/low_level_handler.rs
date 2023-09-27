@@ -40,9 +40,6 @@ impl LowLevelHandler {
             pump_cancellation_token: CancellationToken::new(),
         }
     }
-    pub fn say_hello(&self) {
-        println!("hello!")
-    }
 }
 impl Default for LowLevelHandler {
     fn default() -> Self {
@@ -53,11 +50,11 @@ impl Actor for LowLevelHandler {
     type Context = Context<Self>;
 
     fn started(&mut self, _ctx: &mut Context<Self>) {
-        println!("LowLevelHandler is alive");
+        // println!("LowLevelHandler is alive");
     }
 
     fn stopped(&mut self, _ctx: &mut Context<Self>) {
-        println!("LowLevelHandler is stopped");
+        // println!("LowLevelHandler is stopped");
     }
 }
 impl Handler<LowLevelHandlerCommand> for LowLevelHandler {

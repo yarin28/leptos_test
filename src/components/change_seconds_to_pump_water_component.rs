@@ -48,15 +48,15 @@ pub fn ChangeSecondsToPumpWaterComponent(cx: Scope) -> impl IntoView {
     };
     view! {cx,
         <form on:submit=on_submit
-            class="flex flex-col items-center">
+            class="flex flex-row items-center">
         <input type="text"
             value=move ||seconds_value.get()
             node_ref=input_element
             class="input w-full max-w-xs  input-ghost input-bordered input-primary"
         />
-        <input type="submit" value="Send amount of seconds to open the pump" class="btn btn-primary btn-outline"/>
+        <input type="submit" value="how long every pump last" class="btn btn-primary btn-outline"/>
     </form>
-    <p>"current amount of seconds to pump: " {move||seconds_value.get()}</p>
+    <p>"how long every pump last: " {move||seconds_value.get()}</p>
     }
 }
 #[server(GetSecondsToPumpWater, "/api")]
