@@ -1,9 +1,9 @@
 use actix::prelude::*;
 use anyhow::Result;
-use tokio_util::sync::CancellationToken;
-// use embedded_hal::digital::v2::OutputPin;
-// use rppal::gpio::Gpio;
+use embedded_hal::digital::v2::OutputPin;
+use rppal::gpio::Gpio;
 use tokio::time::Duration;
+use tokio_util::sync::CancellationToken;
 const PUMP_RELAY_PIN: u8 = 4;
 use tracing::{event, info, instrument, Level};
 
@@ -131,20 +131,20 @@ impl LowLevelHandler {
             "ENTERD the stupid_pump_water and will be here for {:?}",
             seconds.to_string()
         );
-        //     let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
-        //     pin.set_high();
+        let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
+        pin.set_high();
         tokio::select! {
-                    _ = cancelation_token.cancelled() => {
-                        // The token was cancelled
-        //     let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
-        //     pin.set_low();
-            info!("the cancelation_token was canceld and will exit the stupin_pump_water function");
-                    }
-                    _ = tokio::time::sleep(Duration::from_secs(seconds.try_into().unwrap())) => {
-        //     pin.set_low();
-            info!("the stupid_pump_water function waited for {:?} and will exit now ",seconds);
-                    }
+                _ = cancelation_token.cancelled() => {
+                    // The token was cancelled
+        let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
+        pin.set_low();
+        info!("the cancelation_token was canceld and will exit the stupin_pump_water function");
                 }
+                _ = tokio::time::sleep(Duration::from_secs(seconds.try_into().unwrap())) => {
+        pin.set_low();
+        info!("the stupid_pump_water function waited for {:?} and will exit now ",seconds);
+                }
+            }
 
         event!(
             Level::INFO,
