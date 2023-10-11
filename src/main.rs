@@ -20,7 +20,6 @@ async fn main() -> std::io::Result<()> {
         .with_writer(non_blocking)
         .with_ansi(false)
         .init();
-    info!("started the server");
     let scheduler = SchedulerMutex::new(low_level_handler.clone())
         .await
         .unwrap();

@@ -43,6 +43,5 @@ pub async fn check_pump() -> Result<String, ServerFnError> {
         .text()
         .await
         .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
-    info!("the body is -{:?} ", body);
     Ok(body)
 }

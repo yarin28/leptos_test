@@ -161,18 +161,10 @@ impl MyScheduler {
     }
     fn change_cron_string_in_config(&mut self, new_cron_string: String) -> Result<&mut Self> {
         // the end goal is to validate the cron string here.
-        info!(
-            "if current- {:?} != new-{:?}",
-            self.water_pump_job_curret_corn_string, new_cron_string
-        );
         self.config.cron_string = new_cron_string;
         Ok(self)
     }
     fn change_seconds_to_pump_water_in_config(&mut self, seconds: usize) -> Result<&mut Self> {
-        info!(
-            "if current- {:?} != new-{:?}",
-            self.config.seconds_to_pump_water, seconds
-        );
         self.config.seconds_to_pump_water = seconds;
         Ok(self)
     }
@@ -218,33 +210,14 @@ impl MyScheduler {
                 let cron_string_2 = config.cron_string.clone();
                 let low_level_sender_address = config.low_level_handler_sender.clone();
                 Box::pin(async move {
-                    event!(
-                        Level::INFO,
-                        "inside the water pump job and the cron string is - {:?}",
-                        cron_string_2
-                    );
                     // Query the next execution time for this job
-                    let next_tick = l.next_tick_for_job(uuid).await;
-                    match next_tick {
-                        Ok(Some(ts)) => {
-                            event!(Level::TRACE, "Next time for PUMP_WATER job is {:?}", ts)
-                        }
-                        _ => event!(Level::TRACE, "Could not get next tick for 8s job"),
-                    }
-                    // info!("the cron string is - {:?}", file_config.cron_string);
                     match low_level_sender_address
                         .send(crate::utils::LowLevelHandlerCommand::CloseRelayFor(
                             config.seconds_to_pump_water,
                         ))
                         .await
                     {
-                        Ok(res) => {
-                            event!(
-                                Level::TRACE,
-                                "the pump_water returnd without errors and returnd this {:?}",
-                                res
-                            )
-                        }
+                        Ok(_res) => {}
                         Err(e) => error!("there was an error with the pump{:?}", e),
                     }
                 })
@@ -265,7 +238,6 @@ mod tests {
     }
     #[instrument(skip(scheduler_mutex))]
     async fn create_cron_changing_job(scheduler_mutex: Arc<Mutex<MyScheduler>>) -> Result<Job> {
-        event!(Level::INFO, "enterd the create_cron_changing_job");
         let jj = Job::new_async("1/10 * * * * *", move |uuid, mut l| {
             let scheduler_mutex_cloned = Arc::clone(&scheduler_mutex);
             Box::pin(async move {
@@ -276,19 +248,12 @@ mod tests {
                     .as_secs()
                     % 60;
                 let new_str = format!("{}{}{}", "1/", current_seconds_of_minute, " * * * * * * ");
-                info!("new cron String{:?}", new_str);
                 scheduler_mutex_cloned
                     .lock()
                     .await
                     .change_job(Some(new_str), None)
                     .await
                     .expect("there was an error with creating the new water pump job");
-                // info!("the job data is{:?}", jj.job_data());
-                let next_tick = l.next_tick_for_job(uuid).await;
-                match next_tick {
-                    Ok(Some(ts)) => info!("Next time for 7s job is {:?}", ts),
-                    _ => println!("Could not get next tick for 7s job"),
-                }
             })
         })?;
         Ok(jj)

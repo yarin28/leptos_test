@@ -12,7 +12,6 @@ use tracing::{event, info, instrument, Level};
 //     pin.set_high();
 //     sleep(Duration::from_secs(seconds.try_into().unwrap())).await;
 //     pin.set_low();
-//     info!("the rppal turnd off the relay");
 //     Ok(pin)
 // }
 #[derive(Debug, Clone, Copy)]
@@ -62,18 +61,13 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
 
     // #[instrument(fields(msg))]
     fn handle(&mut self, msg: LowLevelHandlerCommand, _ctx: &mut Context<Self>) -> Self::Result {
-        event!(Level::WARN, "the msg is -> {:?}", msg);
         match msg {
             LowLevelHandlerCommand::CloseRelayFor(seconds) => {
-                event!(Level::INFO, "initiating the stupid_pump_water thread");
                 let cancelation_token = self.pump_cancellation_token.clone();
                 self.water_pump_handler = Some(tokio::spawn(async move {
                     let _res = Self::stupid_pump_water(seconds, cancelation_token.clone()).await;
                 }));
-                event!(
-                    Level::INFO,
-                    "finished initiating the stupid_pump_water thread"
-                );
+
                 Ok(format!("opening the relay for {seconds:}"))
             }
             LowLevelHandlerCommand::OpenRelayImmediately => match &self.water_pump_handler {
@@ -91,25 +85,9 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
 impl LowLevelHandler {
     #[instrument(fields(seconds))]
     pub async fn pump_water(&mut self, seconds: usize) -> Result<&'static str> {
-        event!(
-            Level::INFO,
-            "ENTERD the pump_water_function and will be here for {:?}",
-            seconds.to_string()
-        );
         std::thread::sleep(Duration::from_secs(seconds.try_into().unwrap()));
 
-        event!(Level::INFO, "exited the pump water function");
-        // event!(
-        //     Level::INFO,
-        //     "ENTERD the pump_water_function and will be here for {:?}",
-        //     seconds.to_string()
-        // );
         // sleep(Duration::from_secs(seconds.try_into().unwrap())).await;
-        // event!(
-        //     Level::INFO,
-        //     "EXITING the pump_water_function and after being here for {:?}",
-        //     seconds.to_string()
-        // );
         Ok("finished the pumping")
     }
     // fn call_pump_water(&mut self, seconds: usize) -> Result<()> {
@@ -117,7 +95,6 @@ impl LowLevelHandler {
     //         let client = self.close_immediately = true;
     //         let res = client.get(&url).send().await;
     //         if res.is_ok() {
-    //             info!("It works!");
     //         }
     //     })
     // }
@@ -126,11 +103,6 @@ impl LowLevelHandler {
         seconds: usize,
         cancelation_token: CancellationToken,
     ) -> Result<&'static str> {
-        event!(
-            Level::INFO,
-            "ENTERD the stupid_pump_water and will be here for {:?}",
-            seconds.to_string()
-        );
         let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
         pin.set_high();
         tokio::select! {
@@ -138,19 +110,12 @@ impl LowLevelHandler {
                     // The token was cancelled
         let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
         pin.set_low();
-        info!("the cancelation_token was canceld and will exit the stupin_pump_water function");
                 }
                 _ = tokio::time::sleep(Duration::from_secs(seconds.try_into().unwrap())) => {
         pin.set_low();
-        info!("the stupid_pump_water function waited for {:?} and will exit now ",seconds);
                 }
             }
 
-        event!(
-            Level::INFO,
-            "EXITING the stupid_pump_water and was  here for {:?}",
-            seconds.to_string()
-        );
         Ok("finished the pumping")
     }
 }

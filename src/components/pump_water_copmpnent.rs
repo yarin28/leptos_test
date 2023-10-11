@@ -15,33 +15,16 @@ pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {
 }
 #[server(PumpWater, "/api")]
 pub async fn pump_water(cx: Scope, seconds: usize) -> Result<String, ServerFnError> {
-    tracing::event!(
-        tracing::Level::INFO,
-        "inside the server function - water pump"
-    );
     match leptos_actix::extract(
         cx,
         move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
-            tracing::event!(tracing::Level::INFO, "inside the leptos_actix::extract");
             // let test: () = low_level_handeler;
             match low_level_handeler
                 .send(LowLevelHandlerCommand::CloseRelayFor(seconds))
                 .await
             {
-                Ok(t) => {
-                    tracing::event!(
-                        tracing::Level::INFO,
-                        "calling the low level handeler returnd {t:?}"
-                    );
-                    Ok(t)
-                }
-                Err(e) => {
-                    tracing::event!(
-                        tracing::Level::ERROR,
-                        "calling the low level handeler returnd {e}"
-                    );
-                    Err(e)
-                }
+                Ok(t) => Ok(t),
+                Err(e) => Err(e),
             }
         },
     )
@@ -49,16 +32,9 @@ pub async fn pump_water(cx: Scope, seconds: usize) -> Result<String, ServerFnErr
     {
         Ok(val) => Ok(format!("the pump recived the msessage {val:?}")),
         // Ok(val) => val.into(),
-        Err(e) => {
-            tracing::event!(
-                tracing::Level::ERROR,
-                "there was an error in the pump, reciving the message{}",
-                e
-            );
-            Err(leptos::ServerFnError::ServerError(format!(
-                "couldn`t get the corn string, having a problem with the server{e}"
-            )))
-        }
+        Err(e) => Err(leptos::ServerFnError::ServerError(format!(
+            "couldn`t get the corn string, having a problem with the server{e}"
+        ))),
     }
 }
 

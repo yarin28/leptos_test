@@ -88,15 +88,8 @@ pub async fn get_cron_string(cx: Scope) -> Result<String, ServerFnError> {
     {
         Ok(val) => Ok(val),
         // Ok(val) => val.into(),
-        Err(e) => {
-            tracing::event!(
-                tracing::Level::ERROR,
-                "there was an error in getting the cron string from the scheduler struct {}",
-                e
-            );
-            Err(leptos::ServerFnError::ServerError(
-                "couldn`t get the corn string, having a problem with the server".to_string(),
-            ))
-        }
+        Err(e) => Err(leptos::ServerFnError::ServerError(
+            "couldn`t get the corn string, having a problem with the server".to_string(),
+        )),
     }
 }

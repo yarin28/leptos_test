@@ -61,7 +61,7 @@ pub fn SetAndDisplayComponent(
 }
 
 #[component]
-pub fn Change2(cx: Scope) -> impl IntoView {
+pub fn ChangeSecondsToPumpWaterComponent(cx: Scope) -> impl IntoView {
     let call_action = create_action(cx, move |seconds: &String| {
         let seconds = seconds.clone().parse::<usize>().unwrap();
         async move { change_seconds_to_pump_water(cx, seconds).await }
@@ -80,7 +80,7 @@ pub fn Change2(cx: Scope) -> impl IntoView {
     }
 }
 #[component]
-pub fn ChangeSecondsToPumpWaterComponent(cx: Scope) -> impl IntoView {
+pub fn ChangeSecondsToPumpWaterComponent____old(cx: Scope) -> impl IntoView {
     let call_action = create_action(cx, move |seconds: &String| {
         let seconds = seconds.clone().parse::<usize>().unwrap();
         async move { change_seconds_to_pump_water(cx, seconds).await }
@@ -149,16 +149,9 @@ pub async fn get_seconds_to_pump_water(cx: Scope) -> Result<String, ServerFnErro
     {
         Ok(val) => Ok(val),
         // Ok(val) => val.into(),
-        Err(e) => {
-            tracing::event!(
-                tracing::Level::ERROR,
-                "there was an error in getting the cron string from the scheduler struct {}",
-                e
-            );
-            Err(leptos::ServerFnError::ServerError(
-                "couldn`t get the corn string, having a problem with the server".to_string(),
-            ))
-        }
+        Err(e) => Err(leptos::ServerFnError::ServerError(
+            "couldn`t get the corn string, having a problem with the server".to_string(),
+        )),
     }
 }
 #[server(ChangeSecondsToPumpWater, "/api")]
