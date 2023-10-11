@@ -4,7 +4,6 @@ use cfg_if::cfg_if;
 cfg_if! {
 if #[cfg(feature = "ssr")] {
 use reqwest;
-use tracing::info;
 }
 }
 pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {

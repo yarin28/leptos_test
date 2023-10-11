@@ -80,7 +80,7 @@ pub fn ChangeSecondsToPumpWaterComponent(cx: Scope) -> impl IntoView {
     }
 }
 #[component]
-pub fn ChangeSecondsToPumpWaterComponent____old(cx: Scope) -> impl IntoView {
+pub fn ChangeSecondsToPumpWaterComponentOld(cx: Scope) -> impl IntoView {
     let call_action = create_action(cx, move |seconds: &String| {
         let seconds = seconds.clone().parse::<usize>().unwrap();
         async move { change_seconds_to_pump_water(cx, seconds).await }
@@ -149,7 +149,7 @@ pub async fn get_seconds_to_pump_water(cx: Scope) -> Result<String, ServerFnErro
     {
         Ok(val) => Ok(val),
         // Ok(val) => val.into(),
-        Err(e) => Err(leptos::ServerFnError::ServerError(
+        Err(_e) => Err(leptos::ServerFnError::ServerError(
             "couldn`t get the corn string, having a problem with the server".to_string(),
         )),
     }

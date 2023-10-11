@@ -1,3 +1,4 @@
+pub mod api;
 pub mod app;
 mod chart;
 pub mod components;

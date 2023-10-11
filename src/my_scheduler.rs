@@ -3,8 +3,8 @@ use anyhow::Result;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio_cron_scheduler::{Job, JobScheduler};
-use tracing::{error, info, Level};
-use tracing::{event, instrument};
+use tracing::error;
+use tracing::instrument;
 use uuid::Uuid;
 
 use crate::utils::LowLevelHandler;
@@ -205,9 +205,8 @@ impl MyScheduler {
     }
     #[instrument]
     async fn create_water_pump_job(config: Config) -> Result<Job> {
-        let jj = Job::new_async(config.cron_string.clone().as_str(), move |uuid, mut l| {
+        let jj = Job::new_async(config.cron_string.clone().as_str(), move |_uuid, mut _l| {
             {
-                let cron_string_2 = config.cron_string.clone();
                 let low_level_sender_address = config.low_level_handler_sender.clone();
                 Box::pin(async move {
                     // Query the next execution time for this job
@@ -238,7 +237,7 @@ mod tests {
     }
     #[instrument(skip(scheduler_mutex))]
     async fn create_cron_changing_job(scheduler_mutex: Arc<Mutex<MyScheduler>>) -> Result<Job> {
-        let jj = Job::new_async("1/10 * * * * *", move |uuid, mut l| {
+        let jj = Job::new_async("1/10 * * * * *", move |_uuid, mut _l| {
             let scheduler_mutex_cloned = Arc::clone(&scheduler_mutex);
             Box::pin(async move {
                 // let file_config = CONFIG.lock().await;

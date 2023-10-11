@@ -11,7 +11,6 @@ async fn main() -> std::io::Result<()> {
     use leptos_start::app::*;
     use leptos_start::my_scheduler::*;
     use leptos_start::utils::LowLevelHandler;
-    use tracing::info;
     // let low_level_handler = LowLevelHandler { pump_relay_pin: 4 }.start();
     let low_level_handler = LowLevelHandler::new().start();
     let file_appender = tracing_appender::rolling::daily("./logs", "log_of_day");

@@ -1,19 +1,11 @@
 use actix::prelude::*;
 use anyhow::Result;
-use embedded_hal::digital::v2::OutputPin;
 use rppal::gpio::Gpio;
 use tokio::time::Duration;
 use tokio_util::sync::CancellationToken;
 const PUMP_RELAY_PIN: u8 = 4;
-use tracing::{event, info, instrument, Level};
+use tracing::instrument;
 
-// pub async fn pump_water(seconds: usize) -> Result<impl OutputPin> {
-//     let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
-//     pin.set_high();
-//     sleep(Duration::from_secs(seconds.try_into().unwrap())).await;
-//     pin.set_low();
-//     Ok(pin)
-// }
 #[derive(Debug, Clone, Copy)]
 pub enum LowLevelHandlerCommand {
     CloseRelayFor(usize),

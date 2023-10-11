@@ -88,7 +88,7 @@ pub async fn get_cron_string(cx: Scope) -> Result<String, ServerFnError> {
     {
         Ok(val) => Ok(val),
         // Ok(val) => val.into(),
-        Err(e) => Err(leptos::ServerFnError::ServerError(
+        Err(_e) => Err(leptos::ServerFnError::ServerError(
             "couldn`t get the corn string, having a problem with the server".to_string(),
         )),
     }
