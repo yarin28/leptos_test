@@ -7,6 +7,7 @@ async fn main() -> std::io::Result<()> {
     use actix_web::*;
     use leptos::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
+    use leptos_start::api::check_health::check_health;
     // use leptos_start::app::ChangeCronString;
     use leptos_start::app::*;
     use leptos_start::my_scheduler::*;
@@ -33,6 +34,7 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .route("/api/{tail:.*}", leptos_actix::handle_server_fns())
+            .route("/checkHealth", web::get().to(check_health))
             .leptos_routes(
                 leptos_options.to_owned(),
                 routes.to_owned(),

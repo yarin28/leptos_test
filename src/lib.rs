@@ -1,4 +1,3 @@
-pub mod api;
 pub mod app;
 mod chart;
 pub mod components;
@@ -7,6 +6,11 @@ pub mod my_scheduler;
 pub mod utils;
 use cfg_if::cfg_if;
 
+cfg_if! {
+if #[cfg(feature = "ssr")] {
+pub mod api;
+}
+}
 cfg_if! {
 if #[cfg(feature = "hydrate")] {
 
