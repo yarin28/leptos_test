@@ -18,8 +18,9 @@ leptos_meta = { version = "0.4.10", default-features = false }
 leptos_actix = { version = "0.4.10", optional = true }
 leptos_router = { version = "0.4.10", default-features = false }
 wasm-bindgen = "0.2.87"
-leptos_icons = "0.0.10"
-#mine
+# leptos_icons = { git = "https://github.com/bankai-labs/leptos-icons", features = [ //note: this is bad, writter for old leptos
+#     "HeroiconsOutlineArrowRightCircle",
+# ] }
 reqwest = {version = "0.11.18",default-features = false ,features = ["rustls-tls-native-roots"]}
 serde = { version = "1.0.163", features = ["derive"] }
 rppal = { version = "0.14.1", features = ["hal"], optional = true }

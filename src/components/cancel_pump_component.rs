@@ -23,8 +23,8 @@ pub fn CancelPumpComponent(cx: Scope) -> impl IntoView {
         class:btn-error=move || {cancel_pump.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
         && !pending.get() && cancel_pump.version().get() >0}
          >"cancel_the pump"</button>
-    <p>{move || pending.get().then_some("waiting for response") } </p>
-    <p>{move || cancel_pump.value().get()} </p>
+    <p class="m-0">{move || pending.get().then_some("waiting for response") } </p>
+    <p class="m-0">{move || cancel_pump.value().get()} </p>
         }
 }
 #[server(CancelPump, "/api")]

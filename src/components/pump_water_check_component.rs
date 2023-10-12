@@ -30,8 +30,8 @@ pub fn PumpWaterCheck(cx: Scope) -> impl IntoView {
         class:btn-error=move || {check_pump.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
         && !pending.get() && check_pump.version().get() >0}
          >"test server internet conactivity"</button>
-    <p>{move || pending.get().then_some("waiting for response") } </p>
-    <p>{move || check_pump.value().get()} </p>
+    <p class="m-0">{move || pending.get().then_some("waiting for response") } </p>
+    <p class="m-0">{move || check_pump.value().get()} </p>
         }
 }
 #[server(CheckPump, "/api")]

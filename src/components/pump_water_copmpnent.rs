@@ -55,8 +55,10 @@ pub fn PumpWaterComponent(cx: Scope) -> impl IntoView {
             <input type="range" class="range range-primary" min="1" max="100" value="50" id="myRange" on:input=move|ev|{
                 ev.prevent_default();
                 set_value.set(event_target_value(&ev).parse().unwrap());
+                //the unwrap cant fail because the input type is range and it can output only
+                //numbers between 1-100
             }/>
-        <button class="btn btn-primary" on:click= move |ev| {
+        <button class="btn btn-primary m-0" on:click= move |ev| {
             ev.prevent_default();
             pump_water.dispatch(value);
             }
@@ -66,8 +68,8 @@ pub fn PumpWaterComponent(cx: Scope) -> impl IntoView {
         class:btn-error=move || {pump_water.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
         && !pending.get() && pump_water.version().get() >0}
          >" pump water"</button>
-    <p>{move || value} </p>
-    <p>{move || pending.get().then_some("waiting for response") } </p>
-    <p>{move || pump_water.value().get()} </p>
+    <p class="m-0">{move || value} </p>
+    <p class="m-0">{move || pending.get().then_some("waiting for response") } </p>
+    <p class="m-0">{move || pump_water.value().get()} </p>
         }
 }

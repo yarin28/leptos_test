@@ -1,4 +1,4 @@
-use actix_web::{web, App, HttpServer, Responder};
+use actix_web::Responder;
 use cfg_if::cfg_if;
 cfg_if! {
 if #[cfg(feature = "ssr")] {

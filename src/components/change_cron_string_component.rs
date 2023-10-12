@@ -52,7 +52,7 @@ pub fn ChangeCronStringComponent(cx: Scope) -> impl IntoView {
         />
         <input type="submit" value="Send new cron string" class="btn btn-primary btn-outline"/>
     </form>
-    <p>"current cron string is: " {move ||cron_string.get()}</p>
+    <p class="m-0">"current cron string is: " {move ||cron_string.get()}</p>
     }
 }
 #[server(ChangeCronString, "/api")]

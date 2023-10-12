@@ -8,10 +8,13 @@ async fn main() -> std::io::Result<()> {
     use leptos::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use leptos_start::api::check_health::check_health;
+    use std::process;
     // use leptos_start::app::ChangeCronString;
     use leptos_start::app::*;
     use leptos_start::my_scheduler::*;
     use leptos_start::utils::LowLevelHandler;
+    use tracing::event;
+    use tracing::Level;
     // let low_level_handler = LowLevelHandler { pump_relay_pin: 4 }.start();
     let low_level_handler = LowLevelHandler::new().start();
     let file_appender = tracing_appender::rolling::daily("./logs", "log_of_day");
@@ -20,10 +23,30 @@ async fn main() -> std::io::Result<()> {
         .with_writer(non_blocking)
         .with_ansi(false)
         .init();
-    let scheduler = SchedulerMutex::new(low_level_handler.clone())
-        .await
-        .unwrap();
-    let conf = get_configuration(None).await.unwrap();
+    let scheduler = match SchedulerMutex::new(low_level_handler.clone()).await {
+        Ok(scheduler) => scheduler,
+        Err(e) => {
+            event!(
+                Level::ERROR,
+                "application error with the initialize of SchedulerMutex. e -> {:?}",
+                e
+            );
+            eprintln!("application error with the initialize of SchedulerMutex: {e}");
+            process::exit(1);
+        }
+    };
+    let conf = match get_configuration(None).await {
+        Ok(conf) => conf,
+        Err(e) => {
+            event!(
+                Level::ERROR,
+                "application error with the initialize configuration of leptos. e -> {:?}",
+                e
+            );
+            eprintln!("application error with the initialize configuration of leptos: {e}");
+            process::exit(1);
+        }
+    };
     let addr = conf.leptos_options.site_addr;
     // Generate the list of routes in your Leptos App
     let routes = generate_route_list(|cx| view! { cx, <App/> });

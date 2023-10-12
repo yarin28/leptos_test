@@ -1,10 +1,13 @@
+/* handles all the low level comunications with the hardware layer
+ * this an actor can recive messages and will handle async messages
+ */
 use actix::prelude::*;
 use anyhow::Result;
 use rppal::gpio::Gpio;
 use tokio::time::Duration;
 use tokio_util::sync::CancellationToken;
 const PUMP_RELAY_PIN: u8 = 4;
-use tracing::instrument;
+// use tracing::instrument;
 
 #[derive(Debug, Clone, Copy)]
 pub enum LowLevelHandlerCommand {
@@ -57,7 +60,7 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
             LowLevelHandlerCommand::CloseRelayFor(seconds) => {
                 let cancelation_token = self.pump_cancellation_token.clone();
                 self.water_pump_handler = Some(tokio::spawn(async move {
-                    let _res = Self::stupid_pump_water(seconds, cancelation_token.clone()).await;
+                    let _res = Self::pump_water(seconds, cancelation_token.clone()).await;
                 }));
 
                 Ok(format!("opening the relay for {seconds:}"))
@@ -75,23 +78,7 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
 }
 
 impl LowLevelHandler {
-    #[instrument(fields(seconds))]
-    pub async fn pump_water(&mut self, seconds: usize) -> Result<&'static str> {
-        std::thread::sleep(Duration::from_secs(seconds.try_into().unwrap()));
-
-        // sleep(Duration::from_secs(seconds.try_into().unwrap())).await;
-        Ok("finished the pumping")
-    }
-    // fn call_pump_water(&mut self, seconds: usize) -> Result<()> {
-    //     actix_web::rt::spawn(async move {
-    //         let client = self.close_immediately = true;
-    //         let res = client.get(&url).send().await;
-    //         if res.is_ok() {
-    //         }
-    //     })
-    // }
-
-    async fn stupid_pump_water(
+    async fn pump_water(
         seconds: usize,
         cancelation_token: CancellationToken,
     ) -> Result<&'static str> {
@@ -104,6 +91,7 @@ impl LowLevelHandler {
         pin.set_low();
                 }
                 _ = tokio::time::sleep(Duration::from_secs(seconds.try_into().unwrap())) => {
+                //NOTE:the unwrap cant fail so its ok.
         pin.set_low();
                 }
             }
