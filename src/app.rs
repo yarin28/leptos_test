@@ -1,15 +1,24 @@
+use crate::components::cancel_pump_component::CancelPumpComponent;
+use crate::components::canvas_component::CanvasComponent;
+use crate::components::change_cron_string_component::ChangeCronStringComponent;
+use crate::components::change_seconds_to_pump_water_component::ChangeSecondsToPumpWaterComponent;
+use crate::components::pump_help_component::PumpHelpComponent;
+use crate::components::pump_water_check_component::PumpWaterCheck;
+use crate::components::pump_water_copmpnent::PumpWaterComponent;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 
-#[cfg(feature = "ssr")]
-use reqwest;
+use cfg_if::cfg_if;
+cfg_if! {
+if #[cfg(feature = "ssr")] {
+}
+}
 
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context(cx);
-
     view! {
         cx,
 
@@ -17,8 +26,10 @@ pub fn App(cx: Scope) -> impl IntoView {
         // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/leptos_start.css"/>
 
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"/>
+
         // sets the document title
-        <Title text="Welcome to Leptos"/>
+        <Title text="Garden Pi"/>
 
         // content for this welcome page
         <Router>
@@ -35,47 +46,16 @@ pub fn App(cx: Scope) -> impl IntoView {
 #[component]
 fn HomePage(cx: Scope) -> impl IntoView {
     // Creates a reactive value to update the button
-    let (count, set_count) = create_signal(cx, 0);
-    let on_click = move |_| set_count.update(|count| *count += 1);
-
     view! { cx,
-        <h1>"Welcome to Leptos!"</h1>
-        <button on:click=on_click>"Click Me: " {count}</button>
-        <PumpWaterCheck/>
+        <div class="card w-96 bg-base-100 shadow-xl prose flex flex-col justify-evenly items-center">
+            <h1 >"Welcome to the garden control system"</h1>
+            <ChangeCronStringComponent/>
+            <ChangeSecondsToPumpWaterComponent/>
+            <PumpWaterComponent/>
+            <PumpWaterCheck/>
+            <CancelPumpComponent/>
+            < PumpHelpComponent/ >
+        </div>
+        <CanvasComponent/>
     }
-}
-
-#[server(CheckPump, "/api")]
-pub async fn check_pump() -> Result<String, ServerFnError> {
-    let body = reqwest::get("http://fakerapi.it/api/v1/custom?fname=firstName")
-        .await
-        .map_err(|e| ServerFnError::ServerError(e.to_string()))?
-        .text()
-        .await
-        .map_err(|e| ServerFnError::ServerError(e.to_string()))?;
-    Ok(body)
-}
-pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {
-    value
-        .map(|v| v.unwrap_or("".to_string()).is_empty())
-        .unwrap_or(false)
-}
-
-#[component]
-fn PumpWaterCheck(cx: Scope) -> impl IntoView {
-    let check_pump = create_action(cx, |_| async move { check_pump().await });
-    let pending = check_pump.pending();
-    view! {cx,<button on:click= move |ev| {
-            ev.prevent_default();
-            check_pump.dispatch(5);
-            }
-        class:warning-button =pending
-        class:success-button=move || { check_pump.value().get().is_some() && pending.get() ==false && !check_if_empty(check_pump.value().get())}
-        class:info-button=move || { check_pump.version().get() ==0 && pending.get() ==false }
-        class:error-button=move || {check_pump.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
-        && pending.get()==false && check_pump.version().get() >0}
-         >" click me to check the pump"</button>
-    <p>{move || pending().then(||"waiting for response") } </p>
-    <p>{move || check_pump.value().get()} </p>
-        }
 }

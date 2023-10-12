@@ -7,47 +7,64 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+#leptos
 actix-files = { version = "0.6", optional = true }
 actix-web = { version = "4", optional = true, features = ["macros"] }
+actix= { version = "0.13.0", optional = true }
 console_error_panic_hook = "0.1"
 cfg-if = "1"
-leptos = { version = "0.3", default-features = false, features = ["serde"] }
-leptos_meta = { version = "0.3", default-features = false }
-leptos_actix = { version = "0.3", optional = true }
-leptos_router = { version = "0.3", default-features = false }
-wasm-bindgen = "0.2.84"
+leptos = { version = "0.4.10", default-features = false, features = ["serde"] }
+leptos_meta = { version = "0.4.10", default-features = false }
+leptos_actix = { version = "0.4.10", optional = true }
+leptos_router = { version = "0.4.10", default-features = false }
+wasm-bindgen = "0.2.87"
 leptos_icons = "0.0.10"
-reqwest = "0.11.18"
+#mine
+reqwest = {version = "0.11.18",default-features = false ,features = ["rustls-tls-native-roots"]}
 serde = { version = "1.0.163", features = ["derive"] }
+rppal = { version = "0.14.1", features = ["hal"], optional = true }
+embedded-hal = { version = "0.2.7", optional = true }
+thiserror = "1.0.40"
+futures = { version = "0.3", optional = true ,default-features = false }
+#logger
+ 
+log = {version = "0.4.17"}
+tracing ={ version = "0.1.37", optional = true }
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"],optional=true}
+tracing-appender = { version = "0.2", optional = true }
+tracing-actix-web= { version = "0.7", optional = true }
+env_logger =  { version = "0.9", optional = true }
+tokio = { version = "1.28.2", features = ["time"] }
+anyhow = "1.0.71"
+serde-wasm-bindgen = "0.5.0"
+uuid = { version = "1.4.0", features = ["v4", "js", "fast-rng"] }
+tokio-cron-scheduler = "0.9.4"
+lazy_static = "1.4.0"
+tokio-util = "0.7.9"
 
 [features]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
-ssr = [
-  "dep:actix-files",
-  "dep:actix-web",
-  "dep:leptos_actix",
-  "leptos/ssr",
-  "leptos_meta/ssr",
-  "leptos_router/ssr",
-]
+ssr = ["dep:tracing", "dep:futures", "dep:actix", "dep:tracing-actix-web", "dep:env_logger", "dep:tracing-appender", "dep:tracing-appender", "dep:tracing-subscriber", "dep:actix-files", "dep:rppal", "dep:embedded-hal", "dep:actix-web", "dep:leptos_actix", "leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr"]
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name   
 output-name = "leptos_start"
 # The site root folder is where cargo-leptos generate all output. WARNING: all content of this folder will be erased on a rebuild. Use it in your server setup.
 site-root = "target/site"
+js-dir = "src"
 # The site-root relative folder where all compiled output (JS, WASM and CSS) is written
 # Defaults to pkg	
 site-pkg-dir = "pkg"
 # [Optional] The source CSS file. If it ends with .sass or .scss then it will be compiled by dart-sass into CSS. The CSS is optimized by Lightning CSS before being written to <site-root>/<site-pkg>/app.css
-style-file = "style/main.scss"
+style-file = "style/output.css"
 # Assets source dir. All files found here will be copied and synchronized to site-root.
 # The assets-dir cannot have a sub directory with the same name/path as site-pkg-dir.
 #
 # Optional. Env: LEPTOS_ASSETS_DIR.
 assets-dir = "assets"
 # The IP and port (ex: 127.0.0.1:3000) where the server serves the content. Use it in your server setup.
-site-addr = "127.0.0.1:3000"
+# site-addr = "127.0.0.1:3000"
+site-addr = "0.0.0.0:3000"
 # The port to use for automatic reload monitoring
 reload-port = 3001
 # [Optional] Command to use when running end2end tests. It will run in the end2end dir.
@@ -65,7 +82,10 @@ env = "DEV"
 #
 # Optional. Can be over-ridden with the command line parameter --bin-features
 bin-features = ["ssr"]
-
+# The target triple to use when compiling the bin target
+#
+# Optional. Env: LEPTOS_BIN_TARGET_TRIPLE
+# bin-target-triple = "aarch64-unknown-linux-gnu"
 # If the --no-default-features flag should be used when compiling the bin target
 #
 # Optional. Defaults to false.
@@ -80,3 +100,17 @@ lib-features = ["hydrate"]
 #
 # Optional. Defaults to false.
 lib-default-features = false
+
+## the tailwind part 
+# tailwind-input-file="./style/input.css"
+# tailwind-config-file = "./tailwind.config.js"
+#for the canvas
+[dependencies.web-sys]
+# version = "0.3.4"
+features = [
+  'CanvasRenderingContext2d',
+  'Document',
+  'Element',
+  'HtmlCanvasElement',
+  'Window',
+]
