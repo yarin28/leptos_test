@@ -12,17 +12,16 @@ use crate::my_scheduler::SchedulerMutex;
 }
 
 #[component]
-pub fn ChangeSecondsToPumpWaterComponent(cx: Scope) -> impl IntoView {
-    let call_action = create_action(cx, move |seconds: &String| {
+pub fn ChangeSecondsToPumpWaterComponent() -> impl IntoView {
+    let call_action = create_action(move |seconds: &String| {
         let seconds = seconds.clone().parse::<usize>().unwrap();
-        async move { change_seconds_to_pump_water(cx, seconds).await }
+        async move { change_seconds_to_pump_water(seconds).await }
     });
     let stable = create_resource(
-        cx,
         || (),
-        move |_| async move { get_seconds_to_pump_water(cx).await },
+        move |_| async move { get_seconds_to_pump_water().await },
     );
-    view! {cx,
+    view! {
         <SetAndDisplayComponent
             component_name="change amount of seconds the pump will be active for".to_string()
             call_action=call_action stable=stable
@@ -31,26 +30,25 @@ pub fn ChangeSecondsToPumpWaterComponent(cx: Scope) -> impl IntoView {
     }
 }
 #[component]
-pub fn ChangeSecondsToPumpWaterComponentOld(cx: Scope) -> impl IntoView {
-    let call_action = create_action(cx, move |seconds: &String| {
+pub fn ChangeSecondsToPumpWaterComponentOld() -> impl IntoView {
+    let call_action = create_action(move |seconds: &String| {
         let seconds = seconds.clone().parse::<usize>().unwrap();
-        async move { change_seconds_to_pump_water(cx, seconds).await }
+        async move { change_seconds_to_pump_water(seconds).await }
     });
     let stable = create_resource(
-        cx,
         || (),
-        move |_| async move { get_seconds_to_pump_water(cx).await },
+        move |_| async move { get_seconds_to_pump_water().await },
     );
     let seconds = stable
-        .read(cx)
+        .get()
         .map(|val| {
             val.expect("there was en error whth ther server cron string")
             // .expect("there was en error whth ther server cron string")
         })
         .unwrap_or("there was en error whth ther server cron string".to_string());
-    let (seconds_value, set_seconds_value) = create_signal(cx, seconds);
+    let (seconds_value, set_seconds_value) = create_signal(seconds);
 
-    let input_element: NodeRef<Input> = create_node_ref(cx);
+    let input_element: NodeRef<Input> = create_node_ref();
     let on_submit = move |ev: SubmitEvent| {
         // stop the page from reloading!
         ev.prevent_default();
@@ -68,7 +66,7 @@ pub fn ChangeSecondsToPumpWaterComponentOld(cx: Scope) -> impl IntoView {
         set_seconds_value.set(value);
         call_action.dispatch(seconds_value.get());
     };
-    view! {cx,
+    view! {
         <form on:submit=on_submit
             class="flex flex-row items-center">
         <input type="text"
@@ -82,9 +80,8 @@ pub fn ChangeSecondsToPumpWaterComponentOld(cx: Scope) -> impl IntoView {
     }
 }
 #[server(GetSecondsToPumpWater, "/api")]
-pub async fn get_seconds_to_pump_water(cx: Scope) -> Result<String, ServerFnError> {
+pub async fn get_seconds_to_pump_water() -> Result<String, ServerFnError> {
     match leptos_actix::extract(
-        cx,
         move |scheduler_mutex: actix_web::web::Data<SchedulerMutex>| async move {
             scheduler_mutex
                 .scheduler
@@ -106,17 +103,11 @@ pub async fn get_seconds_to_pump_water(cx: Scope) -> Result<String, ServerFnErro
     }
 }
 #[server(ChangeSecondsToPumpWater, "/api")]
-pub async fn change_seconds_to_pump_water(
-    cx: Scope,
-    new_seconds: usize,
-) -> Result<String, ServerFnError> {
-    leptos_actix::extract(
-        cx,
-        move |scheduler: actix_web::web::Data<SchedulerMutex>| {
-            let new_seconds2 = new_seconds;
-            async move { scheduler.change_seconds_to_pump_water(new_seconds2).await }
-        },
-    )
+pub async fn change_seconds_to_pump_water(new_seconds: usize) -> Result<String, ServerFnError> {
+    leptos_actix::extract(move |scheduler: actix_web::web::Data<SchedulerMutex>| {
+        let new_seconds2 = new_seconds;
+        async move { scheduler.change_seconds_to_pump_water(new_seconds2).await }
+    })
     .await?
     .map_err(|_| ServerFnError::ServerError("couldn`t change the cron string".to_string()))?;
     Ok("the function worked".to_string())

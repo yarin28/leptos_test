@@ -12,10 +12,10 @@ pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {
         .unwrap_or(false)
 }
 #[component]
-pub fn PumpWaterCheck(cx: Scope) -> impl IntoView {
-    let check_pump = create_action(cx, |_| async move { check_pump().await });
+pub fn PumpWaterCheck() -> impl IntoView {
+    let check_pump = create_action(|_| async move { check_pump().await });
     let pending = check_pump.pending();
-    view! {cx,
+    view! {
 
         <div class="hidden btn-primary btn-warning btn-success btn-error"></div>//NOTE: the
             //purpuse of the div is to include those classes in the output file, because leptos

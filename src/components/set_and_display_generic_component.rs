@@ -9,7 +9,6 @@ if #[cfg(feature = "ssr")] {
 }
 #[component]
 pub fn SetAndDisplayComponent(
-    cx: Scope,
     call_action: Action<String, Result<String, ServerFnError>>,
     stable: Resource<(), Result<String, ServerFnError>>,
     component_name: String,
@@ -18,14 +17,14 @@ pub fn SetAndDisplayComponent(
     // server_api_function: fn(Scope) -> Result<String, ServerFnError>,
 ) -> impl IntoView {
     let seconds = stable
-        .read(cx)
+        .get()
         .map(|val| {
             val.expect("there was en error whth ther server cron string")
             // .expect("there was en error whth ther server cron string")
         })
         .unwrap_or("there was en error whth ther server cron string".to_string());
-    let (seconds_value, set_seconds_value) = create_signal(cx, seconds);
-    let input_element: NodeRef<Input> = create_node_ref(cx);
+    let (seconds_value, set_seconds_value) = create_signal(seconds);
+    let input_element: NodeRef<Input> = create_node_ref();
     let on_submit = move |ev: SubmitEvent| {
         // stop the page from reloading!
         ev.prevent_default();
@@ -43,7 +42,7 @@ pub fn SetAndDisplayComponent(
         set_seconds_value.set(value);
         call_action.dispatch(seconds_value.get());
     };
-    view! {cx,
+    view! {
             <h4 class="m-0">{move||component_name.clone()}</h4>
         <form on:submit=on_submit
             class="flex flex-row items-center m-0">

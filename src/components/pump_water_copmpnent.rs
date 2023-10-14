@@ -14,9 +14,9 @@ pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {
         .unwrap_or(false)
 }
 #[server(PumpWater, "/api")]
-pub async fn pump_water(cx: Scope, seconds: usize) -> Result<String, ServerFnError> {
+pub async fn pump_water( seconds: usize) -> Result<String, ServerFnError> {
     match leptos_actix::extract(
-        cx,
+        
         move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
             // let test: () = low_level_handeler;
             match low_level_handeler
@@ -39,15 +39,15 @@ pub async fn pump_water(cx: Scope, seconds: usize) -> Result<String, ServerFnErr
 }
 
 #[component]
-pub fn PumpWaterComponent(cx: Scope) -> impl IntoView {
-    let (value, set_value) = create_signal(cx, 0);
+pub fn PumpWaterComponent() -> impl IntoView {
+    let (value, set_value) = create_signal( 0);
     let pump_water = create_action(
-        cx,
-        move |_| async move { pump_water(cx, value.get()).await },
+        
+        move |_| async move { pump_water( value.get()).await },
     );
 
     let pending = pump_water.pending();
-    view! {cx,
+    view! {
 
         <div class="hidden btn-primary btn-warning btn-success btn-error"></div>//NOTE: the
             //purpuse of the div is to include those classes in the output file, because leptos

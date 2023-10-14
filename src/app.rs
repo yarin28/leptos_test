@@ -16,11 +16,10 @@ if #[cfg(feature = "ssr")] {
 }
 
 #[component]
-pub fn App(cx: Scope) -> impl IntoView {
+pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
-    provide_meta_context(cx);
+    provide_meta_context();
     view! {
-        cx,
 
         // injects a stylesheet into the document <head>
         // id=leptos means cargo-leptos will hot-reload this stylesheet
@@ -35,7 +34,7 @@ pub fn App(cx: Scope) -> impl IntoView {
         <Router>
             <main>
                 <Routes>
-                    <Route path="" view=|cx| view! { cx, <HomePage/> }/>
+                    <Route path="" view=| |view! {<HomePage/> }/>
                 </Routes>
             </main>
         </Router>
@@ -44,9 +43,9 @@ pub fn App(cx: Scope) -> impl IntoView {
 
 /// Renders the home page of your application.
 #[component]
-fn HomePage(cx: Scope) -> impl IntoView {
+fn HomePage() -> impl IntoView {
     // Creates a reactive value to update the button
-    view! { cx,
+    view! {
         <div class="card w-96 bg-base-100 shadow-xl prose flex flex-col justify-evenly items-center">
             <h2 >"Welcome to the garden control system"</h2>
             <ChangeCronStringComponent/>

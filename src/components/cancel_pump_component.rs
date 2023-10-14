@@ -8,11 +8,10 @@ use actix::prelude::*;
 }
 }
 #[component]
-pub fn CancelPumpComponent(cx: Scope) -> impl IntoView {
-    let cx2 = cx;
-    let cancel_pump = create_action(cx, move |_| async move { cancel_pump(cx2).await });
+pub fn CancelPumpComponent() -> impl IntoView {
+    let cancel_pump = create_action(move |_| async move { cancel_pump().await });
     let pending = cancel_pump.pending();
-    view! {cx,
+    view! {
         <button class="btn btn-primary" on:click= move |ev| {
             ev.prevent_default();
             cancel_pump.dispatch(5);
@@ -28,9 +27,8 @@ pub fn CancelPumpComponent(cx: Scope) -> impl IntoView {
         }
 }
 #[server(CancelPump, "/api")]
-pub async fn cancel_pump(cx: Scope) -> Result<String, ServerFnError> {
+pub async fn cancel_pump() -> Result<String, ServerFnError> {
     let res = leptos_actix::extract(
-        cx,
         move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
             // let test: () = low_level_handeler;
             match low_level_handeler

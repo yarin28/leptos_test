@@ -11,13 +11,13 @@ if #[cfg(feature = "ssr")] {
 
 #[allow(unused_braces)]
 #[component]
-pub fn CanvasComponent(cx: Scope) -> impl IntoView {
-    let id = create_memo::<String>(cx, |t| {
+pub fn CanvasComponent() -> impl IntoView {
+    let id = create_memo::<String>(|t| {
         t.cloned()
             .unwrap_or_else(|| uuid::Uuid::new_v4().to_string())
     });
-    let my_canvas = view! {cx, <canvas id=move ||id.get()/>};
-    create_effect(cx, move |_| {
+    let my_canvas = view! { <canvas id=move ||id.get()/>};
+    create_effect(move |_| {
         console::log_2(
             &serde_wasm_bindgen::to_value("id").unwrap(),
             &serde_wasm_bindgen::to_value(&id.get()).unwrap(),
@@ -62,5 +62,5 @@ pub fn CanvasComponent(cx: Scope) -> impl IntoView {
             );
         }
     });
-    view! {cx,{my_canvas}}
+    view! {{my_canvas}}
 }

@@ -1,9 +1,9 @@
 use leptos::*;
 #[component]
-pub fn PumpHelpComponent(cx: Scope) -> impl IntoView {
+pub fn PumpHelpComponent() -> impl IntoView {
     // Creates a reactive value to update the button
 
-    view! { cx,
+    view! {
         <div class="backdrop-blur-sm collapse ">
       <input type="checkbox" />
       <div class="collapse-title text-xl font-medium">
