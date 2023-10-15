@@ -82,7 +82,7 @@ impl SchedulerMutex {
             .change_job(None, Some(new_seconds))
             .await
     }
-    #[instrument]
+    #[instrument(skip(self))]
     pub async fn change_cron_string(&self, new_cron_string: String) -> Result<()> {
         self.scheduler
             .lock()
@@ -162,7 +162,7 @@ impl MyScheduler {
             config,
         })
     }
-    #[instrument]
+    #[instrument(skip(self))]
     fn change_cron_string_in_config(&mut self, new_cron_string: String) -> Result<&mut Self> {
         // the end goal is to validate the cron string here.
         self.config.cron_string = new_cron_string;

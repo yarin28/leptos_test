@@ -55,7 +55,7 @@ impl Actor for LowLevelHandler {
 impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
     type Result = Result<String, std::io::Error>;
 
-    #[instrument]
+    #[instrument(level = "trace", skip(self, _ctx, msg))]
     fn handle(&mut self, msg: LowLevelHandlerCommand, _ctx: &mut Context<Self>) -> Self::Result {
         match msg {
             LowLevelHandlerCommand::CloseRelayFor(seconds) => {
@@ -80,7 +80,7 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
 
 impl LowLevelHandler {
     //FIXME: this function should be generic and get the pin number by a variable.
-    #[instrument]
+    #[instrument(level = "trace", skip(cancelation_token))]
     async fn pump_water(
         seconds: usize,
         cancelation_token: CancellationToken,
@@ -98,7 +98,7 @@ impl LowLevelHandler {
                 }
                 _ = tokio::time::sleep(Duration::from_secs(seconds.try_into().unwrap())) => {
                 //NOTE:the unwrap cant fail so its ok.
-        event!(tracing::Level::TRACE, " closing the relay after {seconds:} has passed");
+        event!(tracing::Level::INFO, " closing the relay after {seconds:} has passed");
         pin.set_low();
                 }
             }

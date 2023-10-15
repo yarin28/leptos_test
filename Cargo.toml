@@ -86,7 +86,7 @@ bin-features = ["ssr"]
 # The target triple to use when compiling the bin target
 #
 # Optional. Env: LEPTOS_BIN_TARGET_TRIPLE
-bin-target-triple = "aarch64-unknown-linux-gnu"
+# bin-target-triple = "aarch64-unknown-linux-gnu"
 # If the --no-default-features flag should be used when compiling the bin target
 #
 # Optional. Defaults to false.
