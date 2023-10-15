@@ -8,6 +8,7 @@ async fn main() -> std::io::Result<()> {
     use leptos::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use leptos_start::api::check_health::check_health;
+    use leptos_start::utils::configure_logger;
     use std::process;
     // use leptos_start::app::ChangeCronString;
     use leptos_start::app::*;
@@ -15,14 +16,21 @@ async fn main() -> std::io::Result<()> {
     use leptos_start::utils::LowLevelHandler;
     use tracing::event;
     use tracing::Level;
-    // let low_level_handler = LowLevelHandler { pump_relay_pin: 4 }.start();
-    let low_level_handler = LowLevelHandler::new().start();
+    // configure_logger::configure_logger();
+
     let file_appender = tracing_appender::rolling::daily("./logs", "log_of_day");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::fmt()
         .with_writer(non_blocking)
         .with_ansi(false)
+        .with_span_events(
+            tracing_subscriber::fmt::format::FmtSpan::CLOSE
+                | tracing_subscriber::fmt::format::FmtSpan::ENTER,
+        )
         .init();
+
+    // let low_level_handler = LowLevelHandler { pump_relay_pin: 4 }.start();
+    let low_level_handler = LowLevelHandler::new().start();
     let scheduler = match SchedulerMutex::new(low_level_handler.clone()).await {
         Ok(scheduler) => scheduler,
         Err(e) => {
@@ -50,6 +58,7 @@ async fn main() -> std::io::Result<()> {
     let addr = conf.leptos_options.site_addr;
     // Generate the list of routes in your Leptos App
     let routes = generate_route_list(|| view! {  <App/> });
+    event!(tracing::Level::TRACE, "the server finished configuration");
     //added the line below to register the "api" endpoint.
     HttpServer::new(move || {
         let leptos_options = &conf.leptos_options;
