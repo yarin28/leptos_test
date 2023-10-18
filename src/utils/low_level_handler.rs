@@ -85,8 +85,11 @@ impl LowLevelHandler {
         seconds: usize,
         cancelation_token: CancellationToken,
     ) -> Result<&'static str> {
-        let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
         event!(tracing::Level::TRACE, "opening the relay");
+        let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
+        //FIXME: issue - wont display the log here for some reason? will have to invastigate at
+        //home
+        event!(tracing::Level::WARN, "inside the pump water component");
         pin.set_high();
         tokio::select! {
                 _ = cancelation_token.cancelled() => {
