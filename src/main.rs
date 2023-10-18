@@ -11,40 +11,38 @@ async fn main() -> std::io::Result<()> {
     use leptos_start::utils::configure_logger;
     use std::process;
     // use leptos_start::app::ChangeCronString;
-    use tracing_subscriber::EnvFilter;
-    use tracing_subscriber::fmt;
-    use tracing_subscriber::prelude::*;
     use leptos_start::app::*;
     use leptos_start::my_scheduler::*;
     use leptos_start::utils::LowLevelHandler;
     use tracing::event;
     use tracing::Level;
+    use tracing_subscriber::fmt;
+    use tracing_subscriber::prelude::*;
+    use tracing_subscriber::EnvFilter;
     // configure_logger::configure_logger();
 
     //configure the logger
     let file_appender = tracing_appender::rolling::daily("./logs", "log_of_day");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
-    tracing_subscriber::registry().
-        with(fmt::layer().with_writer(non_blocking).with_ansi(true)
-        .with_span_events(
-            tracing_subscriber::fmt::format::FmtSpan::CLOSE
-                | tracing_subscriber::fmt::format::FmtSpan::ENTER,
-        ))
-        // .with_writer(non_blocking)
-        .with(EnvFilter::from_env("none,mycrate=trace"))
-        // .with_ansi(false)
-        // .with_span_events(
-        //     tracing_subscriber::fmt::format::FmtSpan::CLOSE
-        //         | tracing_subscriber::fmt::format::FmtSpan::ENTER,
-        // )
+    tracing_subscriber::registry()
+        .with(
+            fmt::layer()
+                .with_writer(non_blocking)
+                .with_ansi(false)
+                .with_span_events(
+                    tracing_subscriber::fmt::format::FmtSpan::CLOSE
+                        | tracing_subscriber::fmt::format::FmtSpan::ENTER,
+                ),
+        )
+        .with(
+            EnvFilter::try_from_default_env()
+                .or_else(|_| EnvFilter::try_new("none,leptos_start=trace"))
+                .unwrap(),
+        )
         .init();
 
-
-    tracing::trace!("trace");
-    tracing::info!("info");
-    tracing::debug!("debug");
-    tracing::warn!("warn");
-    tracing::error!("error from main!");
+    event!(tracing::Level::WARN, "this is warn");
+    event!(tracing::Level::DEBUG, "this is debug");
     let low_level_handler = LowLevelHandler::new().start();
     let scheduler = match SchedulerMutex::new(low_level_handler.clone()).await {
         Ok(scheduler) => scheduler,
