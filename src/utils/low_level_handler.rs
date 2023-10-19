@@ -90,7 +90,10 @@ impl LowLevelHandler {
         //FIXME: issue - wont display the log here for some reason? will have to invastigate at
         //home
         event!(tracing::Level::WARN, "inside the pump water component");
+        println!("inside the pump water component");
+        event!(tracing::Level::ERROR, "inside the pump water component");
         pin.set_high();
+        event!(tracing::Level::ERROR, "after the pin.set_high();");
         tokio::select! {
                 _ = cancelation_token.cancelled() => {
                     // The token was cancelled
@@ -106,6 +109,7 @@ impl LowLevelHandler {
                 }
             }
 
+        event!(tracing::Level::ERROR, "after the tokio::select!");
         Ok("finished the pumping")
     }
 }
