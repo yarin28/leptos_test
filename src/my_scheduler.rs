@@ -64,6 +64,7 @@ pub struct SchedulerMutex {
 }
 
 impl SchedulerMutex {
+    #[instrument]
     pub async fn new(sender: Addr<LowLevelHandler>) -> Result<Self> {
         let scheduler_mutex = SchedulerMutex {
             scheduler: Arc::new(Mutex::new(MyScheduler::start(sender).await?)),
@@ -71,6 +72,7 @@ impl SchedulerMutex {
         Ok(scheduler_mutex)
     }
 
+    #[instrument]
     pub async fn change_seconds_to_pump_water(&self, new_seconds: usize) -> Result<()> {
         self.scheduler
             .lock()
@@ -80,6 +82,7 @@ impl SchedulerMutex {
             .change_job(None, Some(new_seconds))
             .await
     }
+    #[instrument(skip(self))]
     pub async fn change_cron_string(&self, new_cron_string: String) -> Result<()> {
         self.scheduler
             .lock()
@@ -159,11 +162,13 @@ impl MyScheduler {
             config,
         })
     }
+    #[instrument(skip(self))]
     fn change_cron_string_in_config(&mut self, new_cron_string: String) -> Result<&mut Self> {
         // the end goal is to validate the cron string here.
         self.config.cron_string = new_cron_string;
         Ok(self)
     }
+    #[instrument]
     fn change_seconds_to_pump_water_in_config(&mut self, seconds: usize) -> Result<&mut Self> {
         self.config.seconds_to_pump_water = seconds;
         Ok(self)
@@ -171,6 +176,7 @@ impl MyScheduler {
     //the function create a new job with paramenter from *config*
     //i want to remove the parametes that the function gets but i need to check if the current
     //string in the config is deffrent from the current string inside the job.
+    #[instrument]
     pub async fn change_job(
         &mut self,
         new_cron_string: Option<String>,

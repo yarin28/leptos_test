@@ -14,9 +14,9 @@ pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {
         .unwrap_or(false)
 }
 #[server(PumpWater, "/api")]
-pub async fn pump_water( seconds: usize) -> Result<String, ServerFnError> {
+#[instrument]
+pub async fn pump_water(seconds: usize) -> Result<String, ServerFnError> {
     match leptos_actix::extract(
-        
         move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
             // let test: () = low_level_handeler;
             match low_level_handeler
@@ -40,11 +40,8 @@ pub async fn pump_water( seconds: usize) -> Result<String, ServerFnError> {
 
 #[component]
 pub fn PumpWaterComponent() -> impl IntoView {
-    let (value, set_value) = create_signal( 0);
-    let pump_water = create_action(
-        
-        move |_| async move { pump_water( value.get()).await },
-    );
+    let (value, set_value) = create_signal(0);
+    let pump_water = create_action(move |_| async move { pump_water(value.get()).await });
 
     let pending = pump_water.pending();
     view! {

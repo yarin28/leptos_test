@@ -5,6 +5,7 @@ cfg_if! {
 if #[cfg(feature = "ssr")] {
 use crate::utils::*;
 use actix::prelude::*;
+use tracing::{event, instrument};
 }
 }
 #[component]
@@ -27,6 +28,7 @@ pub fn CancelPumpComponent() -> impl IntoView {
         }
 }
 #[server(CancelPump, "/api")]
+#[instrument]
 pub async fn cancel_pump() -> Result<String, ServerFnError> {
     let res = leptos_actix::extract(
         move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
@@ -36,7 +38,13 @@ pub async fn cancel_pump() -> Result<String, ServerFnError> {
                 .await
             {
                 Ok(t) => Ok(t),
-                Err(e) => Err(e),
+                Err(e) => {
+                    event!(
+                        tracing::Level::ERROR,
+                        "there was an error with the sending to the lowLevelHandler -> {e},"
+                    );
+                    Err(e)
+                }
             }
         },
     )

@@ -6,6 +6,7 @@ use anyhow::Result;
 use rppal::gpio::Gpio;
 use tokio::time::Duration;
 use tokio_util::sync::CancellationToken;
+use tracing::{event, instrument};
 const PUMP_RELAY_PIN: u8 = 4;
 // use tracing::instrument;
 
@@ -44,23 +45,27 @@ impl Actor for LowLevelHandler {
     type Context = Context<Self>;
 
     fn started(&mut self, _ctx: &mut Context<Self>) {
-        // println!("LowLevelHandler is alive");
+        event!(tracing::Level::TRACE, "the LowLevelHandler has started")
     }
 
     fn stopped(&mut self, _ctx: &mut Context<Self>) {
-        // println!("LowLevelHandler is stopped");
+        event!(tracing::Level::TRACE, "the LowLevelHandler has stopped")
     }
 }
 impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
     type Result = Result<String, std::io::Error>;
 
-    // #[instrument(fields(msg))]
+    #[instrument(level = "trace", skip(self, _ctx, msg))]
     fn handle(&mut self, msg: LowLevelHandlerCommand, _ctx: &mut Context<Self>) -> Self::Result {
         match msg {
             LowLevelHandlerCommand::CloseRelayFor(seconds) => {
                 let cancelation_token = self.pump_cancellation_token.clone();
                 self.water_pump_handler = Some(tokio::spawn(async move {
-                    let _res = Self::pump_water(seconds, cancelation_token.clone()).await;
+                    let res = Self::pump_water(seconds, cancelation_token.clone()).await;
+                    match res {
+                        Ok(_res) => {}
+                        Err(e) => event!(tracing::Level::ERROR, "pump_water has returnd {e}"),
+                    }
                 }));
 
                 Ok(format!("opening the relay for {seconds:}"))
@@ -78,20 +83,27 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
 }
 
 impl LowLevelHandler {
+    //FIXME: this function should be generic and get the pin number by a variable.
+    #[instrument(level = "trace", skip(cancelation_token))]
     async fn pump_water(
         seconds: usize,
         cancelation_token: CancellationToken,
     ) -> Result<&'static str> {
-        let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
+        event!(tracing::Level::TRACE, "opening the relay");
+        let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output(); // because this function call
+                                                                       // had the ? operator it sent the error to the caller that *ignored the error*.
         pin.set_high();
         tokio::select! {
                 _ = cancelation_token.cancelled() => {
                     // The token was cancelled
+
+        event!(tracing::Level::TRACE, " closing the relay after recived the cancelation_token");
         let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
         pin.set_low();
                 }
                 _ = tokio::time::sleep(Duration::from_secs(seconds.try_into().unwrap())) => {
                 //NOTE:the unwrap cant fail so its ok.
+        event!(tracing::Level::INFO, " closing the relay after {seconds:} has passed");
         pin.set_low();
                 }
             }
