@@ -1,6 +1,12 @@
 #[cfg(feature = "ssr")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    use leptos_start::utils::config_builder;
+    leptos_start::utils::config_builder::config_build();
+    println!("finished");
+    Ok(())
+}
+async fn main2() -> std::io::Result<()> {
     use actix::prelude::*;
     use actix_files::Files;
     use actix_web::middleware::Logger;
