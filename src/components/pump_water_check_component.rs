@@ -35,6 +35,7 @@ pub fn PumpWaterCheck() -> impl IntoView {
         }
 }
 #[server(CheckPump, "/api")]
+#[instrument]
 pub async fn check_pump() -> Result<String, ServerFnError> {
     let body = reqwest::get("http://fakerapi.it/api/v1/custom?fname=firstName")
         .await

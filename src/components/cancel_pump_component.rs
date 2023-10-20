@@ -30,7 +30,6 @@ pub fn CancelPumpComponent() -> impl IntoView {
 #[server(CancelPump, "/api")]
 #[instrument]
 pub async fn cancel_pump() -> Result<String, ServerFnError> {
-    event!(tracing::Level::TRACE, "entered the cancel_pump function");
     let res = leptos_actix::extract(
         move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
             // let test: () = low_level_handeler;
@@ -39,12 +38,17 @@ pub async fn cancel_pump() -> Result<String, ServerFnError> {
                 .await
             {
                 Ok(t) => Ok(t),
-                Err(e) => Err(e),
+                Err(e) => {
+                    event!(
+                        tracing::Level::ERROR,
+                        "there was an error with the sending to the lowLevelHandler -> {e},"
+                    );
+                    Err(e)
+                }
             }
         },
     )
     .await;
-    event!(tracing::Level::TRACE, "exited the cancel_pump function");
     match res {
         Ok(val) => Ok(format!("the cancel worked! {val:?}")),
         // Ok(val) => val.into(),

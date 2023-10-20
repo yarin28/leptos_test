@@ -80,6 +80,7 @@ pub fn ChangeSecondsToPumpWaterComponentOld() -> impl IntoView {
     }
 }
 #[server(GetSecondsToPumpWater, "/api")]
+#[instrument]
 pub async fn get_seconds_to_pump_water() -> Result<String, ServerFnError> {
     match leptos_actix::extract(
         move |scheduler_mutex: actix_web::web::Data<SchedulerMutex>| async move {

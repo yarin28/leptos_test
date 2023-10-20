@@ -61,7 +61,11 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
             LowLevelHandlerCommand::CloseRelayFor(seconds) => {
                 let cancelation_token = self.pump_cancellation_token.clone();
                 self.water_pump_handler = Some(tokio::spawn(async move {
-                    let _res = Self::pump_water(seconds, cancelation_token.clone()).await;
+                    let res = Self::pump_water(seconds, cancelation_token.clone()).await;
+                    match res {
+                        Ok(_res) => {}
+                        Err(e) => event!(tracing::Level::ERROR, "pump_water has returnd {e}"),
+                    }
                 }));
 
                 Ok(format!("opening the relay for {seconds:}"))
@@ -86,14 +90,9 @@ impl LowLevelHandler {
         cancelation_token: CancellationToken,
     ) -> Result<&'static str> {
         event!(tracing::Level::TRACE, "opening the relay");
-        let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
-        //FIXME: issue - wont display the log here for some reason? will have to invastigate at
-        //home
-        event!(tracing::Level::WARN, "inside the pump water component");
-        println!("inside the pump water component");
-        event!(tracing::Level::ERROR, "inside the pump water component");
+        let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output(); // because this function call
+                                                                       // had the ? operator it sent the error to the caller that *ignored the error*.
         pin.set_high();
-        event!(tracing::Level::ERROR, "after the pin.set_high();");
         tokio::select! {
                 _ = cancelation_token.cancelled() => {
                     // The token was cancelled
@@ -109,7 +108,6 @@ impl LowLevelHandler {
                 }
             }
 
-        event!(tracing::Level::ERROR, "after the tokio::select!");
         Ok("finished the pumping")
     }
 }

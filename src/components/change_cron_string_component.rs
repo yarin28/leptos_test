@@ -56,6 +56,7 @@ pub fn ChangeCronStringComponent() -> impl IntoView {
     }
 }
 #[server(ChangeCronString, "/api")]
+#[instrument]
 pub async fn change_corn_string(new_cron_string: String) -> Result<String, ServerFnError> {
     leptos_actix::extract(move |scheduler: actix_web::web::Data<SchedulerMutex>| {
         let new_cron_string = new_cron_string.clone();
