@@ -1,9 +1,10 @@
-use std::fs::File;
 use std::io::prelude::*;
+use std::{collections::HashMap, fs::File};
 // use anyhow::Result;
 use config::{Config, FileStoredFormat, Format, Map, Value, ValueKind};
 use rlua::{Function, Lua, MetaMethod, Result, UserData, UserDataMethods, Variadic};
 use rlua_table_derive::FromLuaTable;
+use serde::Serialize;
 
 pub fn config_build() {
     let mut config_file_content: String = String::new();
@@ -21,7 +22,7 @@ pub fn config_build() {
         Err(e) => println!("An error: {}", e),
     }
 }
-#[derive(Default, Clone, FromLuaTable, Debug)]
+#[derive(Serialize, Default, Clone, FromLuaTable, Debug)]
 pub struct Settings {
     name: String,
     gpio_pin: usize,
@@ -59,13 +60,16 @@ impl Format for MyFormat {
             let default = Settings::default();
             let table = lua_ctx.globals().get("gpio_table").unwrap();
             let from_lua = Settings::from_lua_table(&table);
-            print!("Default: {:?}\n", default);
-            print!("From lua: {:?}\n", from_lua);
         });
+        dbg!(from_lua);
+        let mut json_string = serde_json::to_string(&from_lua)?;
+        dbg!(json_string);
+        let mut lookup: HashMap<String, Value> = serde_json::from_str(&json_string)?;
+        dbg!(lookup);
         result.insert(
             "pump".to_string(),
-            Value::new(uri, ValueKind::Table(from_lua.try_into().unwrap())), //TODO: the struct will
-                                                                             //have to become a hashmap
+            Value::new(uri, ValueKind::Table(lookup)), //TODO: the struct will
+                                                       //have to become a hashmap
         );
         if text == "good" {
             result.insert(
