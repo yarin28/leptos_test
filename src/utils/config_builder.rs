@@ -70,12 +70,25 @@ where
 }
 fn from_lua_table_to_hash_map(
     lua_value: rlua::Value,
-    rust_table: &mut HashMap<rlua::Value, rlua::Value>,
+    rust_table: &mut HashMap<config::Value, config::Value>,
+    lua_ctx: &Context,
 ) -> Result<String> {
     println!("inside from_lua_table_to_hash_map");
     match lua_value {
         rlua::Value::Table(table) => {
             let pairs = table.pairs::<rlua::Value, rlua::Value>();
+            pairs.for_each(|pair| match pair {
+                Ok(pair) => {
+                    print!(
+                        "this is the 0th - {:?}",
+                        rlua::Value::from_lua(pair.0, *lua_ctx)
+                    );
+                    println!("this is the 1th - {:?}", pair.1);
+                }
+                Err(e) => {
+                    eprintln!("{:?}", e);
+                }
+            })
         }
         rlua::Value::Nil => todo!(),
         rlua::Value::Boolean(_) => todo!(),
@@ -109,14 +122,14 @@ impl Format for MyFormat {
         let mut gpio2_config: HashMap<String, Table> = HashMap::new();
         let mut gpio_list: Vec<GpioConfig>;
         // let mut lua_config: HashMap<rlua::String, Value> = HashMap::new();
-        let mut lua_config: HashMap<rlua::Value, rlua::Value> = HashMap::new();
+        let mut lua_config: HashMap<config::Value, config::Value> = HashMap::new();
         println!("inside parse");
 
         lua.context(|lua_ctx| {
             let config: Table = lua_ctx.load(text).eval().unwrap();
             println!("tins is config return structure{:?}", config);
             // lua_config = FromLua::from_lua(rlua::Value::Table(config), lua_ctx).unwrap();
-            from_lua_table_to_hash_map(rlua::Value::Table(config), &mut lua_config);
+            from_lua_table_to_hash_map(rlua::Value::Table(config), &mut lua_config, &lua_ctx);
 
             // config
             //     .pairs::<String, rlua::Value>()
