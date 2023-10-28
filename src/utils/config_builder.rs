@@ -93,8 +93,10 @@ impl Format for MyFormat {
 
         lua.context(|lua_ctx| {
             lua_ctx.load(text).exec().unwrap();
-            gpio_config_from_lua = get_lua_table_with_struct::<GpioConfig>("gpio_table", &lua_ctx);
-            gpio_list = get_lua_table_with_struct("gpio_table2", &lua_ctx);
+            let globals = lua_ctx.globals().pairs().map(|pair| result.insert);
+            result.insert("luaconf", Value::new(uri, ValueKind::Table(globals)));
+            // gpio_config_from_lua = get_lua_table_with_struct::<GpioConfig>("gpio_table", &lua_ctx);
+            // gpio_list = get_lua_table_with_struct("gpio_table2", &lua_ctx);
         });
         event!(
             tracing::Level::DEBUG,
