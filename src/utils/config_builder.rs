@@ -21,10 +21,10 @@ pub fn config_build() {
         .add_source(config::File::from_str(&config_file_content, MyFormat))
         .build();
 
-    match config {
-        Ok(cfg) => println!("A config: {:#?}", cfg),
-        Err(e) => println!("An error: {}", e),
-    }
+    // match config {
+    //     Ok(cfg) => println!("A config: {:#?}", cfg),
+    //     Err(e) => println!("An error: {}", e),
+    // }
 }
 #[derive(Serialize, Default, Clone, FromLuaTable, Debug)]
 pub struct GpioConfig {
@@ -33,10 +33,6 @@ pub struct GpioConfig {
     gpio_type: String,
     active_seconds: usize,
     cron_string: String,
-}
-#[derive(Serialize, Default, Clone, FromLuaTable, Debug)]
-pub struct GpioConfigVec {
-    array: Vec<GpioConfig>,
 }
 
 trait FromLuaTable {
@@ -90,11 +86,27 @@ impl Format for MyFormat {
         let mut gpio_config_from_lua = GpioConfig::default();
         let mut gpio2_config: HashMap<String, Table> = HashMap::new();
         let mut gpio_list: Vec<GpioConfig>;
+        // let mut lua_config: HashMap<rlua::String, Value> = HashMap::new();
+        let mut lua_config: HashMap<std::string::String, Value> = HashMap::new();
+        println!("inside parse");
 
         lua.context(|lua_ctx| {
-            lua_ctx.load(text).exec().unwrap();
-            let globals = lua_ctx.globals().pairs().map(|pair| result.insert);
-            result.insert("luaconf", Value::new(uri, ValueKind::Table(globals)));
+            let config: Table = lua_ctx.load(text).eval().unwrap();
+            println!("tins is config return structure{:?}", config);
+            // lua_config = FromLua::from_lua(rlua::Value::Table(config), lua_ctx).unwrap();
+            lua_config = config.pairs().collect::<HashMap<_, Value>>();
+
+            // config
+            //     .pairs::<String, rlua::Value>()
+            //     .for_each(|pair| { println!("this is pair - {pair:?}");
+            // if pair.});
+            // let globals:  =
+            println!("insidecontext");
+            // lua_ctx
+            //     .globals()
+            //     .pairs::<String, rlua::Value>()
+            //     .for_each(|pair| println!("this is pair - {pair:?}"));
+            // result.insert("luaconf", Value::new(uri, ValueKind::Table(globals)));
             // gpio_config_from_lua = get_lua_table_with_struct::<GpioConfig>("gpio_table", &lua_ctx);
             // gpio_list = get_lua_table_with_struct("gpio_table2", &lua_ctx);
         });
@@ -106,13 +118,13 @@ impl Format for MyFormat {
         dbg!(&gpio2_config);
         let json_string = serde_json::to_string(&gpio_config_from_lua)?;
         // dbg!(&json_string);
-        let lookup: HashMap<String, Value> = serde_json::from_str(&json_string)?;
+        // let lookup: HashMap<String, Value> = serde_json::from_str(&json_string)?;
         // dbg!(&lookup);
-        result.insert(
-            "pump".to_string(),
-            Value::new(uri, ValueKind::Table(lookup)), //TODO: the struct will
-                                                       //have to become a hashmap
-        );
+        // result.insert(
+        //     "pump".to_string(),
+        //     config::Value::new(uri, ValueKind::Table(lookup)), //TODO: the struct will
+        //                                                        //have to become a hashmap
+        // );
         Ok(result)
     }
 }
