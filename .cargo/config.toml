@@ -11,5 +11,5 @@ rr = "run --release"
 [env]
 # CRON_STRING = "0 0 5 1/2 * * *"
 # CRON_STRING = "0 24 20 * * * *"
-CRON_STRING = "1/20 * * * * * *"
-SECONDS_TO_PUMP_WATER = {value= "5"}
+CRON_STRING = "1 4,17 * * * * *"
+SECONDS_TO_PUMP_WATER = {value= "20"}

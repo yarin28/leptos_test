@@ -13,3 +13,4 @@ end2end/playwright-report/
 playwright/.cache/
 logs/
 style/output.css
+.luarc.json

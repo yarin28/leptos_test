@@ -1,7 +1,7 @@
 use crate::components::cancel_pump_component::CancelPumpComponent;
 use crate::components::canvas_component::CanvasComponent;
 use crate::components::change_cron_string_component::ChangeCronStringComponent;
-use crate::components::change_seconds_to_pump_water_component::ChangeSecondsToPumpWaterComponent;
+use crate::components::change_seconds_to_pump_water_component::ChangeSecondsToPumpWaterComponentOld;
 use crate::components::pump_help_component::PumpHelpComponent;
 use crate::components::pump_water_check_component::PumpWaterCheck;
 use crate::components::pump_water_copmpnent::PumpWaterComponent;
@@ -49,7 +49,7 @@ fn HomePage() -> impl IntoView {
         <div class="card w-96 bg-base-100 shadow-xl prose flex flex-col justify-evenly items-center">
             <h2 >"Welcome to the garden control system"</h2>
             <ChangeCronStringComponent/>
-            <ChangeSecondsToPumpWaterComponent/>
+            <ChangeSecondsToPumpWaterComponentOld/>
             <PumpWaterComponent/>
             <PumpWaterCheck/>
             <CancelPumpComponent/>

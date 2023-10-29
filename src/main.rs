@@ -41,8 +41,6 @@ async fn main() -> std::io::Result<()> {
         )
         .init();
 
-    event!(tracing::Level::WARN, "this is warn");
-    event!(tracing::Level::DEBUG, "this is debug");
     let low_level_handler = LowLevelHandler::new().start();
     let scheduler = match SchedulerMutex::new(low_level_handler.clone()).await {
         Ok(scheduler) => scheduler,
