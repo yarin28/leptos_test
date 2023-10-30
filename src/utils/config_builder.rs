@@ -68,6 +68,28 @@ where
     result = table;
     result
 }
+fn from_lua_table_to_hash_map(
+    lua_value: rlua::Value,
+    rust_table: &mut HashMap<rlua::Value, rlua::Value>,
+) -> Result<String> {
+    println!("inside from_lua_table_to_hash_map");
+    match lua_value {
+        rlua::Value::Table(table) => {
+            let pairs = table.pairs::<rlua::Value, rlua::Value>();
+        }
+        rlua::Value::Nil => todo!(),
+        rlua::Value::Boolean(_) => todo!(),
+        rlua::Value::LightUserData(_) => todo!(),
+        rlua::Value::Integer(_) => todo!(),
+        rlua::Value::Number(_) => todo!(),
+        rlua::Value::String(_) => todo!(),
+        rlua::Value::Function(_) => todo!(),
+        rlua::Value::Thread(_) => todo!(),
+        rlua::Value::UserData(_) => todo!(),
+        rlua::Value::Error(_) => todo!(),
+    }
+    Ok("good".to_string())
+}
 
 impl Format for MyFormat {
     fn parse(
@@ -87,14 +109,14 @@ impl Format for MyFormat {
         let mut gpio2_config: HashMap<String, Table> = HashMap::new();
         let mut gpio_list: Vec<GpioConfig>;
         // let mut lua_config: HashMap<rlua::String, Value> = HashMap::new();
-        let mut lua_config: HashMap<std::string::String, Value> = HashMap::new();
+        let mut lua_config: HashMap<rlua::Value, rlua::Value> = HashMap::new();
         println!("inside parse");
 
         lua.context(|lua_ctx| {
             let config: Table = lua_ctx.load(text).eval().unwrap();
             println!("tins is config return structure{:?}", config);
             // lua_config = FromLua::from_lua(rlua::Value::Table(config), lua_ctx).unwrap();
-            lua_config = config.pairs().collect::<HashMap<_, Value>>();
+            from_lua_table_to_hash_map(rlua::Value::Table(config), &mut lua_config);
 
             // config
             //     .pairs::<String, rlua::Value>()
