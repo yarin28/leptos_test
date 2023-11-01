@@ -1,10 +1,11 @@
 use std::io::prelude::*;
 use std::{collections::HashMap, fs::File};
 // use anyhow::Result;
-use config::{Config, FileStoredFormat, Format, Map, Value, ValueKind};
+use config::{Config, FileStoredFormat, Format, Map, ValueKind};
 use rlua::{Context, FromLua, Function, Lua, MetaMethod, RegistryKey, Result, Table, UserData};
+use rlua_serde;
 use rlua_table_derive::FromLuaTable;
-use serde::{de, Serialize};
+use serde::{de, Deserialize, Serialize};
 use tracing::event;
 
 pub fn config_build() {
@@ -18,7 +19,7 @@ pub fn config_build() {
         .add_source(config::File::from_str(&config_file_content, MyFormat))
         .build();
 
-    // match config {
+    // matth config {
     //     Ok(cfg) => println!("A config: {:#?}", cfg),
     //     Err(e) => println!("An error: {}", e),
     // }
@@ -32,6 +33,10 @@ pub struct GpioConfig {
     cron_string: String,
 }
 
+#[derive(Serialize, Default, Clone, Deserialize, Debug)]
+pub struct ConfigTable {
+    table: HashMap<config::Value, config::Value>,
+}
 trait FromLuaTable {
     fn from_lua_table(table: &rlua::Table) -> Self;
 }
@@ -65,9 +70,12 @@ where
     result = table;
     result
 }
+// a small explantaion on the lifetime-
+// i promise using the lifetime 'a  that both the lua table and the lua context have the same
+// "lifetime"
 fn from_lua_table_to_hash_map<'a>(
     lua_value: rlua::Value<'a>,
-    rust_table: &'a mut HashMap<config::Value, config::Value>,
+    rust_table: &mut HashMap<config::Value, config::Value>,
     lua_ctx: &'a Context<'a>,
 ) -> Result<String> {
     println!("inside from_lua_table_to_hash_map");
@@ -77,10 +85,7 @@ fn from_lua_table_to_hash_map<'a>(
                 table.pairs::<rlua::Value, rlua::Value>();
             pairs.for_each(|pair| match pair {
                 Ok(pair) => {
-                    print!(
-                        "this is the 0th - {:?}",
-                        rlua::Value::from_lua(pair.0, *lua_ctx)
-                    );
+                    print!("this is the 0th - {:?}", pair.0);
                     println!("this is the 1th - {:?}", pair.1);
                 }
                 Err(e) => {
@@ -127,7 +132,15 @@ impl Format for MyFormat {
             let config: Table = lua_ctx.load(text).eval().unwrap();
             println!("tins is config return structure{:?}", config);
             // lua_config = FromLua::from_lua(rlua::Value::Table(config), lua_ctx).unwrap();
-            from_lua_table_to_hash_map(rlua::Value::Table(config), &mut lua_config, &lua_ctx);
+            let res =
+                from_lua_table_to_hash_map(rlua::Value::Table(config), &mut lua_config, &lua_ctx);
+            match res {
+                Ok(_) => {}
+                Err(_) => event!(
+                    tracing::Level::ERROR,
+                    "there was an error with from_lua_table_to_hash_map"
+                ),
+            };
 
             // config
             //     .pairs::<String, rlua::Value>()

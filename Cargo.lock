@@ -1651,6 +1651,7 @@ dependencies = [
  "reqwest",
  "rlua 0.19.7",
  "rlua-table-derive",
+ "rlua_serde",
  "rppal",
  "serde",
  "serde-wasm-bindgen",
@@ -2331,6 +2332,19 @@ dependencies = [
 
 [[package]]
 name = "rlua"
+version = "0.17.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93397b9792dc237cab7554ab4c4128b8aa5fc9ec25892cfd82c92286055313d0"
+dependencies = [
+ "bitflags",
+ "bstr",
+ "cc",
+ "libc",
+ "num-traits",
+]
+
+[[package]]
+name = "rlua"
 version = "0.19.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d33e5ba15c3d43178f283ed5863d4531e292fc0e56fb773f3bea45f18e3a42a"
@@ -2362,6 +2376,16 @@ dependencies = [
  "quote 0.3.15",
  "rlua 0.10.2",
  "syn 0.11.11",
+]
+
+[[package]]
+name = "rlua_serde"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46e57c8c7bfcc5f18a46ddaf0c6a0d6a5c083ce9e6d185d4093bf98e640d256b"
+dependencies = [
+ "rlua 0.17.1",
+ "serde",
 ]
 
 [[package]]
