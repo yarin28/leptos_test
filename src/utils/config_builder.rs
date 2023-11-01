@@ -2,10 +2,7 @@ use std::io::prelude::*;
 use std::{collections::HashMap, fs::File};
 // use anyhow::Result;
 use config::{Config, FileStoredFormat, Format, Map, Value, ValueKind};
-use rlua::{
-    Context, FromLua, Function, Lua, MetaMethod, RegistryKey, Result, Table, UserData,
-    UserDataMethods, Variadic,
-};
+use rlua::{Context, FromLua, Function, Lua, MetaMethod, RegistryKey, Result, Table, UserData};
 use rlua_table_derive::FromLuaTable;
 use serde::{de, Serialize};
 use tracing::event;
@@ -68,15 +65,16 @@ where
     result = table;
     result
 }
-fn from_lua_table_to_hash_map(
-    lua_value: rlua::Value,
-    rust_table: &mut HashMap<config::Value, config::Value>,
-    lua_ctx: &Context,
+fn from_lua_table_to_hash_map<'a>(
+    lua_value: rlua::Value<'a>,
+    rust_table: &'a mut HashMap<config::Value, config::Value>,
+    lua_ctx: &'a Context<'a>,
 ) -> Result<String> {
     println!("inside from_lua_table_to_hash_map");
     match lua_value {
         rlua::Value::Table(table) => {
-            let pairs = table.pairs::<rlua::Value, rlua::Value>();
+            let pairs: rlua::TablePairs<'a, rlua::Value<'a>, rlua::Value<'a>> =
+                table.pairs::<rlua::Value, rlua::Value>();
             pairs.for_each(|pair| match pair {
                 Ok(pair) => {
                     print!(
