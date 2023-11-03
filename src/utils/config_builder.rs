@@ -33,10 +33,10 @@ pub struct GpioConfig {
     cron_string: String,
 }
 
-#[derive(Serialize, Default, Clone, Deserialize, Debug)]
-pub struct ConfigTable {
-    table: HashMap<config::Value, config::Value>,
-}
+// #[derive(Serialize, Default, Clone, Deserialize, Debug)]
+// pub struct ConfigTable {
+//     table: HashMap<config::Value, config::Value>,
+// }
 trait FromLuaTable {
     fn from_lua_table(table: &rlua::Table) -> Self;
 }
@@ -76,34 +76,10 @@ where
 fn from_lua_table_to_hash_map<'a>(
     lua_value: rlua::Value<'a>,
     rust_table: &mut HashMap<config::Value, config::Value>,
-    lua_ctx: &'a Context<'a>,
+    lua_ctx: Context<'a>,
 ) -> Result<String> {
-    println!("inside from_lua_table_to_hash_map");
-    match lua_value {
-        rlua::Value::Table(table) => {
-            let pairs: rlua::TablePairs<'a, rlua::Value<'a>, rlua::Value<'a>> =
-                table.pairs::<rlua::Value, rlua::Value>();
-            pairs.for_each(|pair| match pair {
-                Ok(pair) => {
-                    print!("this is the 0th - {:?}", pair.0);
-                    println!("this is the 1th - {:?}", pair.1);
-                }
-                Err(e) => {
-                    eprintln!("{:?}", e);
-                }
-            })
-        }
-        rlua::Value::Nil => todo!(),
-        rlua::Value::Boolean(_) => todo!(),
-        rlua::Value::LightUserData(_) => todo!(),
-        rlua::Value::Integer(_) => todo!(),
-        rlua::Value::Number(_) => todo!(),
-        rlua::Value::String(_) => todo!(),
-        rlua::Value::Function(_) => todo!(),
-        rlua::Value::Thread(_) => todo!(),
-        rlua::Value::UserData(_) => todo!(),
-        rlua::Value::Error(_) => todo!(),
-    }
+    // let lua_value: rlua::Value<'a> = <rlua::Value<'a>>::from_lua(lua_value, lua_ctx).unwrap();
+    // dbg!(lua_value);
     Ok("good".to_string())
 }
 
@@ -132,8 +108,11 @@ impl Format for MyFormat {
             let config: Table = lua_ctx.load(text).eval().unwrap();
             println!("tins is config return structure{:?}", config);
             // lua_config = FromLua::from_lua(rlua::Value::Table(config), lua_ctx).unwrap();
-            let res =
-                from_lua_table_to_hash_map(rlua::Value::Table(config), &mut lua_config, &lua_ctx);
+            let res = from_lua_table_to_hash_map(
+                rlua::Value::Table(config),
+                &mut lua_config,
+                lua_ctx.clone(),
+            );
             match res {
                 Ok(_) => {}
                 Err(_) => event!(
