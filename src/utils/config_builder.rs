@@ -3,7 +3,7 @@ use std::{collections::HashMap, fs::File};
 // use anyhow::Result;
 use config::{Config, FileStoredFormat, Format, Map, ValueKind};
 use rlua::{Context, FromLua, Function, Lua, MetaMethod, RegistryKey, Result, Table, UserData};
-use rlua_serde;
+// use rlua_serde;
 use rlua_table_derive::FromLuaTable;
 use serde::{de, Deserialize, Serialize};
 use tracing::event;
