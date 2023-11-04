@@ -1,12 +1,7 @@
+use config::{Config, FileStoredFormat, Format, Map};
+use rlua::{Result, TablePairs};
+use std::collections::HashMap;
 use std::io::prelude::*;
-use std::{collections::HashMap, fs::File};
-// use anyhow::Result;
-use config::{Config, FileStoredFormat, Format, Map, ValueKind};
-use rlua::{Context, FromLua, Function, Lua, MetaMethod, RegistryKey, Result, Table, UserData};
-// use rlua_serde;
-use rlua_table_derive::FromLuaTable;
-use serde::{de, Deserialize, Serialize};
-use tracing::event;
 
 pub fn config_build() {
     let mut config_file_content: String = String::new();
@@ -15,7 +10,7 @@ pub fn config_build() {
         .read_to_string(&mut config_file_content)
         .unwrap();
     let config = Config::builder()
-        .add_source(config::File::from_str(&config_file_content, MyFormat))
+        .add_source(config::File::from_str(&config_file_content, LuaTable))
         .build();
 
     match config {
@@ -23,27 +18,11 @@ pub fn config_build() {
         Err(e) => println!("An error: {}", e),
     }
 }
-#[derive(Serialize, Default, Clone, FromLuaTable, Debug)]
-pub struct GpioConfig {
-    name: String,
-    gpio_pin: usize,
-    gpio_type: String,
-    active_seconds: usize,
-    cron_string: String,
-}
-
-// #[derive(Serialize, Default, Clone, Deserialize, Debug)]
-// pub struct ConfigTable {
-//     table: HashMap<config::Value, config::Value>,
-// }
-trait FromLuaTable {
-    fn from_lua_table(table: &rlua::Table) -> Self;
-}
 
 #[derive(Debug, Clone)]
-pub struct MyFormat;
+pub struct LuaTable;
 
-impl Format for MyFormat {
+impl Format for LuaTable {
     fn parse(
         &self,
         uri: Option<&String>,
@@ -52,7 +31,6 @@ impl Format for MyFormat {
     {
         let mut result = HashMap::new();
         let lua = rlua::Lua::new();
-
         lua.context(|lua_ctx| {
             let config_lua_table = lua_ctx.load(text).eval().unwrap();
             result.insert(
@@ -67,7 +45,7 @@ impl Format for MyFormat {
 // As strange as it seems for config sourced from a string, legacy demands its sacrifice
 // It is only required for File source, custom sources can use Format without caring for extensions
 static MY_FORMAT_EXT: Vec<&'static str> = vec![];
-impl FileStoredFormat for MyFormat {
+impl FileStoredFormat for LuaTable {
     fn file_extensions(&self) -> &'static [&'static str] {
         &MY_FORMAT_EXT
     }
@@ -76,14 +54,19 @@ impl FileStoredFormat for MyFormat {
 fn lua_to_config_value(lua_value: rlua::Value) -> Result<config::Value> {
     Ok(match lua_value {
         rlua::Value::Table(table) => {
-            let pairs = table.pairs();
+            let pairs: TablePairs<rlua::Value, rlua::Value> = table.pairs();
             let map = pairs
                 .map(|pair| {
                     let (key, value) = pair?;
                     let key = match key {
                         rlua::Value::String(name) => name.to_str()?.to_string(),
                         rlua::Value::Integer(i) => i.to_string(),
-                        _ => return Err(todo!()),
+                        _ => {
+                            {
+                                tracing::event!(tracing::Level::ERROR,"error with the config table, please check the syntax of the lua config table");
+                                    return Err(rlua::Error::FromLuaConversionError { from: value.type_name(), to: value.type_name(), message: Some( "bad syntax".to_string() ) })
+                            }
+                        },
                     };
                     Ok((key, lua_to_config_value(value)?))
                 })
@@ -103,4 +86,9 @@ fn lua_to_config_value(lua_value: rlua::Value) -> Result<config::Value> {
         rlua::Value::UserData(_) => todo!(),
         rlua::Value::Error(_) => todo!(),
     })
+}
+
+#[test]
+fn name() {
+    unimplemented!();
 }
