@@ -1579,6 +1579,7 @@ dependencies = [
  "leptos_meta",
  "leptos_router",
  "log",
+ "qpidfile",
  "reqwest",
  "rppal",
  "serde",
@@ -1984,6 +1985,12 @@ dependencies = [
  "version_check",
  "yansi",
 ]
+
+[[package]]
+name = "qpidfile"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7070aeb856318f50286d9bd36e2035e457668b2f24db0633a5d4045d7b09924"
 
 [[package]]
 name = "quote"

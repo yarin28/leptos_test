@@ -10,6 +10,7 @@ async fn main() -> std::io::Result<()> {
     use leptos_start::api::check_health::check_health;
     use leptos_start::utils::configure_logger;
     use std::process;
+    use tokio::signal;
     // use leptos_start::app::ChangeCronString;
     use leptos_start::app::*;
     use leptos_start::my_scheduler::*;
@@ -20,7 +21,16 @@ async fn main() -> std::io::Result<()> {
     use tracing_subscriber::prelude::*;
     use tracing_subscriber::EnvFilter;
     // configure_logger::configure_logger();
+    use qpidfile::Pidfile;
 
+    //this is for the monit pid file listener
+    let pidfile = Pidfile::new("leptos_garden.pid");
+    tokio::spawn(async move {
+        tokio::signal::ctrl_c().await.unwrap();
+        if let Err(e) = std::fs::remove_file("leptos_garden.pid") {
+            eprintln!("Unable to remove pidfile {:?}; {}", "leptos_garden.pid", e);
+        }
+    });
     //configure the logger
     let file_appender = tracing_appender::rolling::daily("./logs", "log_of_day");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
