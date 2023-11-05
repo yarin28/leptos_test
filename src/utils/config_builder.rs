@@ -1,9 +1,11 @@
+use anyhow::bail;
+use anyhow::Result;
 use config::{Config, FileStoredFormat, Format, Map};
-use rlua::{Result, TablePairs};
+use rlua::TablePairs;
 use std::collections::HashMap;
 use std::io::prelude::*;
 
-pub fn config_build() {
+pub fn config_build() -> anyhow::Result<Config, config::ConfigError> {
     let mut config_file_content: String = String::new();
     std::fs::File::open("config.lua")
         .unwrap()
@@ -13,10 +15,13 @@ pub fn config_build() {
         .add_source(config::File::from_str(&config_file_content, LuaTable))
         .build();
 
-    match config {
-        Ok(cfg) => println!("A config: {:#?}", cfg),
+    match &config {
+        Ok(cfg) => {
+            println!("A config: {:#?}", cfg);
+        }
         Err(e) => println!("An error: {}", e),
     }
+    config
 }
 
 #[derive(Debug, Clone)]
@@ -27,8 +32,7 @@ impl Format for LuaTable {
         &self,
         uri: Option<&String>,
         text: &str,
-    ) -> std::result::Result<Map<String, config::Value>, Box<dyn std::error::Error + Send + Sync>>
-    {
+    ) -> Result<Map<String, config::Value>, Box<dyn std::error::Error + Send + Sync>> {
         let mut result = HashMap::new();
         let lua = rlua::Lua::new();
         lua.context(|lua_ctx| {
@@ -52,6 +56,8 @@ impl FileStoredFormat for LuaTable {
 }
 
 fn lua_to_config_value(lua_value: rlua::Value) -> Result<config::Value> {
+    // fn lua_to_config_value(lua_value: rlua::Value) -> Result<config::Value, rlua::Error> {
+    let uri = "lua".to_string();
     Ok(match lua_value {
         rlua::Value::Table(table) => {
             let pairs: TablePairs<rlua::Value, rlua::Value> = table.pairs();
@@ -64,7 +70,7 @@ fn lua_to_config_value(lua_value: rlua::Value) -> Result<config::Value> {
                         _ => {
                             {
                                 tracing::event!(tracing::Level::ERROR,"error with the config table, please check the syntax of the lua config table");
-                                    return Err(rlua::Error::FromLuaConversionError { from: value.type_name(), to: value.type_name(), message: Some( "bad syntax".to_string() ) })
+                                     bail!(rlua::Error::FromLuaConversionError { from: value.type_name(), to: value.type_name(), message: Some( "bad syntax".to_string() ) })
                             }
                         },
                     };
@@ -73,7 +79,7 @@ fn lua_to_config_value(lua_value: rlua::Value) -> Result<config::Value> {
                 .collect::<Result<Vec<_>>>()?
                 .into_iter()
                 .collect::<HashMap<_, _>>();
-            config::Value::new(None, map)
+            config::Value::new(Some(&uri), map)
         }
         rlua::Value::Nil => config::Value::new(None, config::ValueKind::Nil),
         rlua::Value::Boolean(val) => config::Value::new(None, val),
@@ -87,7 +93,6 @@ fn lua_to_config_value(lua_value: rlua::Value) -> Result<config::Value> {
         rlua::Value::Error(_) => todo!(),
     })
 }
-
 #[test]
 fn name() {
     unimplemented!();
