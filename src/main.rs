@@ -1,9 +1,19 @@
+use cfg_if::cfg_if;
+cfg_if! {
+    if #[cfg(feature = "ssr")] {
+        use config::Config;
+        use lazy_static::lazy_static;
+        use std::sync::RwLock;
+    use leptos_start::utils::config_builder::config_build;
+        lazy_static! {
+            pub static ref SETTINGS: RwLock<Config> = RwLock::new(config_build().unwrap());
+        }
+    }
+}
 #[cfg(feature = "ssr")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    use leptos_start::utils::config_builder::config_build;
-    let config = config_build();
-    dbg!(config);
+    dbg!(SETTINGS.read().unwrap());
     Ok(())
 }
 async fn main2() -> std::io::Result<()> {

@@ -3,6 +3,7 @@
  */
 use actix::prelude::*;
 use anyhow::Result;
+use leptos_start::SETTINGS; //FIXME: cant figure out how to use static var in diffrent files
 use rppal::gpio::Gpio;
 use tokio::time::Duration;
 use tokio_util::sync::CancellationToken;
