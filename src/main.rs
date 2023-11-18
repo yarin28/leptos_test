@@ -1,13 +1,13 @@
-#[cfg(feature = "ssr")]
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main2() -> std::io::Result<()> {
     dbg!(leptos_start::utils::config_builder::SETTINGS
         .read()
         .unwrap()
         .get_string("lua.cron_string"));
     Ok(())
 }
-async fn main2() -> std::io::Result<()> {
+#[cfg(feature = "ssr")]
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
     use actix::prelude::*;
     use actix_files::Files;
     use actix_web::middleware::Logger;
@@ -15,7 +15,6 @@ async fn main2() -> std::io::Result<()> {
     use leptos::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use leptos_start::api::check_health::check_health;
-    use std::process;
     // use leptos_start::app::ChangeCronString;
     use leptos_start::app::*;
     use leptos_start::my_scheduler::*;

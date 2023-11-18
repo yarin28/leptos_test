@@ -20,12 +20,16 @@ impl Config {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(low_level_handler_sender: Addr<LowLevelHandler>) -> ConfigBuilder {
         ConfigBuilder {
-            cron_string: SETTINGS.read().unwrap().get_string("cron_string").unwrap(),
+            cron_string: SETTINGS
+                .read()
+                .unwrap()
+                .get_string("lua.cron_string")
+                .unwrap(),
             seconds_to_pump_water: usize::try_from(
                 SETTINGS
                     .read()
                     .unwrap()
-                    .get_int("seconds_to_pump_water")
+                    .get_int("lua.seconds_to_pump_water")
                     .unwrap(),
             )
             .unwrap(),
@@ -123,8 +127,11 @@ impl MyScheduler {
         let sched = JobScheduler::new().await?;
         let water_pump_job = Self::create_water_pump_job(config.clone()).await.unwrap();
         let water_pump_job_uuid = sched.add(water_pump_job).await?;
-        let water_pump_job_curret_corn_string =
-            SETTINGS.read().unwrap().get_string("cron_string").unwrap();
+        let water_pump_job_curret_corn_string = SETTINGS
+            .read()
+            .unwrap()
+            .get_string("lua.cron_string")
+            .unwrap();
         sched.start().await?;
         Ok(MyScheduler {
             sched,
