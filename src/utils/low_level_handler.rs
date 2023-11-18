@@ -1,6 +1,7 @@
 /* handles all the low level comunications with the hardware layer
  * this an actor can recive messages and will handle async messages
  */
+use crate::utils::config_builder::SETTINGS; //FIXME: cant figure out how to use static var in diffrent files
 use actix::prelude::*;
 use anyhow::Result;
 use rppal::gpio::Gpio;

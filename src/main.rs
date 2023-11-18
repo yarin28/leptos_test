@@ -1,3 +1,10 @@
+async fn main2() -> std::io::Result<()> {
+    dbg!(leptos_start::utils::config_builder::SETTINGS
+        .read()
+        .unwrap()
+        .get_string("lua.cron_string"));
+    Ok(())
+}
 #[cfg(feature = "ssr")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -8,8 +15,6 @@ async fn main() -> std::io::Result<()> {
     use leptos::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use leptos_start::api::check_health::check_health;
-    use leptos_start::utils::configure_logger;
-    use std::process;
     // use leptos_start::app::ChangeCronString;
     use leptos_start::app::*;
     use leptos_start::my_scheduler::*;
@@ -52,7 +57,10 @@ async fn main() -> std::io::Result<()> {
                 e
             );
             eprintln!("application error with the initialize of SchedulerMutex: {e}");
-            process::exit(1);
+            return Err((std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "application error with the initialize of SchedulerMutex",
+            )));
         }
     };
     let conf = match get_configuration(None).await {
@@ -64,7 +72,10 @@ async fn main() -> std::io::Result<()> {
                 e
             );
             eprintln!("application error with the initialize configuration of leptos: {e}");
-            process::exit(1);
+            return Err((std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "application error with the initialize configuration of leptos",
+            )));
         }
     };
     let addr = conf.leptos_options.site_addr;

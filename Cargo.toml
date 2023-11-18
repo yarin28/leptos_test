@@ -10,7 +10,7 @@ crate-type = ["cdylib", "rlib"]
 #leptos
 actix-files = { version = "0.6", optional = true }
 actix-web = { version = "4", optional = true, features = ["macros"] }
-actix= { version = "0.13.0", optional = true }
+actix = { version = "0.13.0", optional = true }
 console_error_panic_hook = "0.1"
 cfg-if = "1"
 leptos = { version = "0.5", default-features = false, features = ["serde"] }
@@ -21,20 +21,24 @@ wasm-bindgen = "0.2.87"
 # leptos_icons = { git = "https://github.com/bankai-labs/leptos-icons", features = [ //note: this is bad, writter for old leptos
 #     "HeroiconsOutlineArrowRightCircle",
 # ] }
-reqwest = {version = "0.11.18",default-features = false ,features = ["rustls-tls-native-roots"]}
+reqwest = { version = "0.11.18", default-features = false, features = [
+  "rustls-tls-native-roots",
+] }
 serde = { version = "1.0.163", features = ["derive"] }
 rppal = { version = "0.14.1", features = ["hal"], optional = true }
 embedded-hal = { version = "0.2.7", optional = true }
 thiserror = "1.0.40"
-futures = { version = "0.3", optional = true ,default-features = false }
+futures = { version = "0.3", optional = true, default-features = false }
 #logger
- 
-log = {version = "0.4.17"}
-tracing ={ version = "0.1.37", optional = true }
-tracing-subscriber = { version = "0.3.16", features = ["env-filter"],optional=true}
+
+log = { version = "0.4.17" }
+tracing = { version = "0.1.37", optional = true }
+tracing-subscriber = { version = "0.3.16", features = [
+  "env-filter",
+], optional = true }
 tracing-appender = { version = "0.2", optional = true }
-tracing-actix-web= { version = "0.7", optional = true }
-env_logger =  { version = "0.9", optional = true }
+tracing-actix-web = { version = "0.7", optional = true }
+env_logger = { version = "0.9", optional = true }
 tokio = { version = "1.28.2", features = ["time", "tokio-macros", "macros"] }
 anyhow = "1.0.71"
 serde-wasm-bindgen = "0.5.0"
@@ -43,9 +47,34 @@ tokio-cron-scheduler = "0.9.4"
 lazy_static = "1.4.0"
 tokio-util = "0.7.9"
 
+#adding config crate using custom lua format 
+rlua = { version = "0.19.7", optional = true }
+config = { version = "0.13.1", optional = true }
+directories = { version = "5.0.1", optional = true }
+
 [features]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]
-ssr = ["dep:tracing", "dep:futures", "dep:actix", "dep:tracing-actix-web", "dep:env_logger", "dep:tracing-appender", "dep:tracing-appender", "dep:tracing-subscriber", "dep:actix-files", "dep:rppal", "dep:embedded-hal", "dep:actix-web", "dep:leptos_actix", "leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr"]
+ssr = [
+  "dep:directories",
+  "dep:config",
+  "dep:rlua",
+  "dep:tracing",
+  "dep:futures",
+  "dep:actix",
+  "dep:tracing-actix-web",
+  "dep:env_logger",
+  "dep:tracing-appender",
+  "dep:tracing-appender",
+  "dep:tracing-subscriber",
+  "dep:actix-files",
+  "dep:rppal",
+  "dep:embedded-hal",
+  "dep:actix-web",
+  "dep:leptos_actix",
+  "leptos/ssr",
+  "leptos_meta/ssr",
+  "leptos_router/ssr",
+]
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name   
