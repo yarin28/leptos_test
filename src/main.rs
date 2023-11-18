@@ -42,12 +42,11 @@ async fn main() -> std::io::Result<()> {
         .with(
             EnvFilter::try_from_default_env()
                 .or_else(|_| EnvFilter::try_new("none,leptos_start=trace"))
-                .unwrap(),
+                .unwrap()
+                .add_directive("leptos_start::app=error".parse().unwrap()), // .add_directive("leptos_start::components=error".parse().unwrap())
         )
         .init();
 
-    event!(tracing::Level::WARN, "this is warn");
-    event!(tracing::Level::DEBUG, "this is debug");
     let low_level_handler = LowLevelHandler::new().start();
     let scheduler = match SchedulerMutex::new(low_level_handler.clone()).await {
         Ok(scheduler) => scheduler,

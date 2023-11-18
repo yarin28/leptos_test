@@ -14,5 +14,4 @@ playwright/.cache/
 logs/
 style/output.css
 .luarc.json
-package-lock.json
-package.json
+
