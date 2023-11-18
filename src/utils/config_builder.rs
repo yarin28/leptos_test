@@ -5,23 +5,25 @@ use rlua::TablePairs;
 use std::collections::HashMap;
 use std::io::prelude::*;
 
+use lazy_static::lazy_static;
+use std::sync::RwLock;
+lazy_static! {
+    pub static ref SETTINGS: RwLock<Config> = RwLock::new(config_build().unwrap());
+}
 pub fn config_build() -> anyhow::Result<Config, config::ConfigError> {
     let mut config_file_content: String = String::new();
     std::fs::File::open("config.lua")
         .unwrap()
         .read_to_string(&mut config_file_content)
         .unwrap();
-    let config = Config::builder()
+    Config::builder()
         .add_source(config::File::from_str(&config_file_content, LuaTable))
-        .build();
+        .build()
 
-    match &config {
-        Ok(cfg) => {
-            println!("A config: {:#?}", cfg);
-        }
-        Err(e) => println!("An error: {}", e),
-    }
-    config
+    // match &config {
+    //     Ok(_cfg) => {}
+    //     Err(e) => println!("An error: {}", e),
+    // }
 }
 
 #[derive(Debug, Clone)]
@@ -93,6 +95,7 @@ fn lua_to_config_value(lua_value: rlua::Value) -> Result<config::Value> {
         rlua::Value::Error(_) => todo!(),
     })
 }
+
 #[test]
 fn name() {
     unimplemented!();

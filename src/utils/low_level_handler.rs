@@ -1,9 +1,9 @@
 /* handles all the low level comunications with the hardware layer
  * this an actor can recive messages and will handle async messages
  */
+use crate::utils::config_builder::SETTINGS; //FIXME: cant figure out how to use static var in diffrent files
 use actix::prelude::*;
 use anyhow::Result;
-use leptos_start::SETTINGS; //FIXME: cant figure out how to use static var in diffrent files
 use rppal::gpio::Gpio;
 use tokio::time::Duration;
 use tokio_util::sync::CancellationToken;

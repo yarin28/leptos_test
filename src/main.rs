@@ -1,19 +1,10 @@
-use cfg_if::cfg_if;
-cfg_if! {
-    if #[cfg(feature = "ssr")] {
-        use config::Config;
-        use lazy_static::lazy_static;
-        use std::sync::RwLock;
-    use leptos_start::utils::config_builder::config_build;
-        lazy_static! {
-            pub static ref SETTINGS: RwLock<Config> = RwLock::new(config_build().unwrap());
-        }
-    }
-}
 #[cfg(feature = "ssr")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dbg!(SETTINGS.read().unwrap());
+    dbg!(leptos_start::utils::config_builder::SETTINGS
+        .read()
+        .unwrap()
+        .get_string("lua.cron_string"));
     Ok(())
 }
 async fn main2() -> std::io::Result<()> {

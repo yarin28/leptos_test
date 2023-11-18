@@ -1,3 +1,4 @@
+use crate::utils::config_builder::SETTINGS;
 use actix::Addr;
 use anyhow::Result;
 use std::sync::Arc;
@@ -19,8 +20,15 @@ impl Config {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(low_level_handler_sender: Addr<LowLevelHandler>) -> ConfigBuilder {
         ConfigBuilder {
-            cron_string: env!("CRON_STRING").to_string(),
-            seconds_to_pump_water: env!("SECONDS_TO_PUMP_WATER").parse::<usize>().unwrap(),
+            cron_string: SETTINGS.read().unwrap().get_string("cron_string").unwrap(),
+            seconds_to_pump_water: usize::try_from(
+                SETTINGS
+                    .read()
+                    .unwrap()
+                    .get_int("seconds_to_pump_water")
+                    .unwrap(),
+            )
+            .unwrap(),
             low_level_handler_sender,
         }
     }
@@ -53,9 +61,6 @@ impl ConfigBuilder {
             low_level_handler_sender: self.low_level_handler_sender.clone(),
         }
     }
-}
-lazy_static::lazy_static! {
-    // pub static ref CONFIG: Mutex<Config<>> = Mutex::new(ConfigBuilder.cron_string(env!("CRON_STRING").to_string()).seconds_to_pump_water(env!("SECONDS_TO_PUMP_WATER").parse::<usize>().unwrap()).);
 }
 
 #[derive(Clone, Debug)]
@@ -100,41 +105,6 @@ pub struct MyScheduler {
     pub water_pump_job_curret_corn_string: String,
     pub config: Config,
 }
-// pub struct MySchedulerBuilder {
-//     sched: JobScheduler,
-//     water_pump_job_uuid: Uuid,
-//     pub water_pump_job_curret_corn_string: String,
-//     pub config: Config,
-// }
-// impl MySchedulerBuilder {
-//     fn sched(&mut self, sched: JobScheduler) -> &mut Self {
-//         self.sched = sched;
-//         self
-//     }
-//     fn water_pump_job_uuid(&mut self, water_pump_job_uuid: Uuid) -> &mut Self {
-//         self.water_pump_job_uuid = water_pump_job_uuid;
-//         self
-//     }
-//     fn water_pump_job_curret_corn_string(
-//         &mut self,
-//         water_pump_job_curret_corn_string: String,
-//     ) -> &mut Self {
-//         self.water_pump_job_curret_corn_string = water_pump_job_curret_corn_string;
-//         self
-//     }
-//     fn config(&mut self, config: Config) -> &mut Self {
-//         self.config = config;
-//         self
-//     }
-//     //TODO: must find a better name for this function!
-//     //it sopose to mean that you *have* to pass the sender
-//     pub fn default_config_without_sender(sender: Addr<LowLevelHandler>) -> Config {
-//         Config::new(sender)
-//             .cron_string(env!("CRON_STRING").to_string())
-//             .seconds_to_pump_water(env!("SECONDS_TO_PUMP_WATER").parse::<usize>().unwrap())
-//             .build()
-//     }
-// }
 impl std::fmt::Debug for MyScheduler {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MyScheduler")
@@ -153,7 +123,8 @@ impl MyScheduler {
         let sched = JobScheduler::new().await?;
         let water_pump_job = Self::create_water_pump_job(config.clone()).await.unwrap();
         let water_pump_job_uuid = sched.add(water_pump_job).await?;
-        let water_pump_job_curret_corn_string = env!("CRON_STRING").to_string();
+        let water_pump_job_curret_corn_string =
+            SETTINGS.read().unwrap().get_string("cron_string").unwrap();
         sched.start().await?;
         Ok(MyScheduler {
             sched,
