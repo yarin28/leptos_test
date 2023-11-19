@@ -7,13 +7,14 @@ width:100%;
 background-image: url("/background.svg");
 }
 body{
-  justify-content:center;
-  align-items: center;
+  margin: 1px;
+  justify-content:flex-start;
+  align-items: flex-start;
   display: flex;
 }
 .card{
-  background-color: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(5px);
+  /* background-color: rgba(255, 255, 255, 0.5); */
+  /* backdrop-filter: blur(5px); */
   padding: 20px;
   margin: 0px;
 }

@@ -45,7 +45,7 @@ pub fn PumpWaterComponent() -> impl IntoView {
 
     let pending = pump_water.pending();
     view! {
-
+    <div class="content-center">
         <div class="hidden btn-primary btn-warning btn-success btn-error"></div>//NOTE: the
             //purpuse of the div is to include those classes in the output file, because leptos
             //calls then with a diffrent syntax then tailwind-cli can see.
@@ -68,5 +68,6 @@ pub fn PumpWaterComponent() -> impl IntoView {
     <p class="m-0">{move || value} </p>
     <p class="m-0">{move || pending.get().then_some("waiting for response") } </p>
     <p class="m-0">{move || pump_water.value().get()} </p>
+    </div>
         }
 }

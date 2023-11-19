@@ -13,7 +13,7 @@ pub fn CancelPumpComponent() -> impl IntoView {
     let cancel_pump = create_action(move |_| async move { cancel_pump().await });
     let pending = cancel_pump.pending();
     view! {
-        <button class="btn btn-primary" on:click= move |ev| {
+        <button class="btn btn-primary content-center" on:click= move |ev| {
             ev.prevent_default();
             cancel_pump.dispatch(5);
             }
