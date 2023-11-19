@@ -46,25 +46,25 @@ pub fn App() -> impl IntoView {
 fn HomePage() -> impl IntoView {
     // Creates a reactive value to update the button
     view! {
-                    <p class="text-2xl font-bold" >"Welcome to the garden control system"</p>
+    <p class="text-2xl font-bold" >"Welcome to the garden control system"</p>
     <div class="flex flex-col m-px w-fit ">
         <div class="stat flex flex-row content-start flex-wrap">
-                    <ChangeSecondsToPumpWaterComponent/>
-                    <ChangeCronStringComponent/>
+            <ChangeSecondsToPumpWaterComponent/>
+            <ChangeCronStringComponent/>
         </div>
         <div class="flex flex-col align-center flex-wrap">
             <div class="w-1/4">
-                        <PumpWaterComponent/>
+                <PumpWaterComponent/>
             </div>
             <div class="col-span-3 row-span-2 col-start-1 row-start-5">
-                        <CancelPumpComponent/>
+                <CancelPumpComponent/>
             </div>
         </div>
             <div class="w-1/4">
-                        <PumpWaterCheck/>
+                <PumpWaterCheck/>
             </div>
         <div class="col-span-2 row-span-3 col-start-3 row-start-2">
-                    < PumpHelpComponent/ >
+            < PumpHelpComponent/ >
         </div>
     </div>
     <CanvasComponent/>

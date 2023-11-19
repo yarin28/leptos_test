@@ -21,19 +21,47 @@ impl Message for LowLevelHandlerCommand {
 }
 #[derive(Debug)]
 pub struct LowLevelHandler {
+    pub gpio_pins: Vec<GpioPin>,
+}
+
+#[derive(Debug)]
+pub struct GpioPin {
     pub pump_relay_pin: u8,
     pub close_immediately: bool,
     pub water_pump_handler: Option<tokio::task::JoinHandle<()>>,
     pub pump_cancellation_token: CancellationToken,
 }
+
 impl LowLevelHandler {
     pub fn new() -> Self {
+        let gpio_table = SETTINGS
+            .read()
+            .unwrap()
+            .get_table("lua.gpio_table")
+            .unwrap();
+        let gpio_pins: Vec<GpioPin> = gpio_table
+            .iter()
+            .map(|(key, value)| {
+                let table = value.clone().into_table().unwrap();
+                GpioPin {
+                    pump_relay_pin: table.get("gpio_pin").unwrap().clone().into_int().unwrap()
+                        as u8,
+                    close_immediately: false,
+                    water_pump_handler: None,
+                    pump_cancellation_token: CancellationToken::new(),
+                }
+            })
+            .collect();
+        dbg!(gpio_pins);
+
         //i dont belive this function has a possability to fail so i wont use result.
         LowLevelHandler {
-            pump_relay_pin: PUMP_RELAY_PIN,
-            close_immediately: false,
-            water_pump_handler: None,
-            pump_cancellation_token: CancellationToken::new(),
+            gpio_pins: vec![GpioPin {
+                pump_relay_pin: 3,
+                close_immediately: false,
+                water_pump_handler: None,
+                pump_cancellation_token: CancellationToken::new(),
+            }],
         }
     }
 }
@@ -60,8 +88,8 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
     fn handle(&mut self, msg: LowLevelHandlerCommand, _ctx: &mut Context<Self>) -> Self::Result {
         match msg {
             LowLevelHandlerCommand::CloseRelayFor(seconds) => {
-                let cancelation_token = self.pump_cancellation_token.clone();
-                self.water_pump_handler = Some(tokio::spawn(async move {
+                let cancelation_token = self.gpio_pins[0].pump_cancellation_token.clone();
+                self.gpio_pins[0].water_pump_handler = Some(tokio::spawn(async move {
                     let res = Self::pump_water(seconds, cancelation_token.clone()).await;
                     match res {
                         Ok(_res) => {}
@@ -71,14 +99,16 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
 
                 Ok(format!("opening the relay for {seconds:}"))
             }
-            LowLevelHandlerCommand::OpenRelayImmediately => match &self.water_pump_handler {
-                Some(_handler) => {
-                    self.pump_cancellation_token.cancel();
-                    self.pump_cancellation_token = CancellationToken::new();
-                    Ok("aborted the low level task".to_string())
+            LowLevelHandlerCommand::OpenRelayImmediately => {
+                match &self.gpio_pins[0].water_pump_handler {
+                    Some(_handler) => {
+                        self.gpio_pins[0].pump_cancellation_token.cancel();
+                        self.gpio_pins[0].pump_cancellation_token = CancellationToken::new();
+                        Ok("aborted the low level task".to_string())
+                    }
+                    None => Ok("there is no low level task running".to_string()),
                 }
-                None => Ok("there is no low level task running".to_string()),
-            },
+            }
         }
     }
 }
@@ -111,4 +141,10 @@ impl LowLevelHandler {
 
         Ok("finished the pumping")
     }
+}
+
+#[test]
+fn ingest_lua_table() {
+    crate::utils::config_builder::config_build();
+    LowLevelHandler::new();
 }

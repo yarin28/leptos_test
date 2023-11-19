@@ -9,7 +9,5 @@ t = "test"
 r = "run"
 rr = "run --release"
 [env]
-# CRON_STRING = "0 0 5 1/2 * * *"
-# CRON_STRING = "0 24 20 * * * *"
 CRON_STRING = "0 0 4,17 * * * *"
 SECONDS_TO_PUMP_WATER = { value = "20" }
