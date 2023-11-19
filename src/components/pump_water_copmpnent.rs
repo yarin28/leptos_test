@@ -20,7 +20,7 @@ pub async fn pump_water(seconds: usize) -> Result<String, ServerFnError> {
         move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
             // let test: () = low_level_handeler;
             match low_level_handeler
-                .send(LowLevelHandlerCommand::CloseRelayFor(seconds))
+                .send(LowLevelHandlerMessage::CloseRelayFor(seconds))
                 .await
             {
                 Ok(t) => Ok(t),

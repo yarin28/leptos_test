@@ -34,7 +34,7 @@ pub async fn cancel_pump() -> Result<String, ServerFnError> {
         move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
             // let test: () = low_level_handeler;
             match low_level_handeler
-                .send(LowLevelHandlerCommand::OpenRelayImmediately)
+                .send(LowLevelHandlerMessage::OpenRelayImmediately)
                 .await
             {
                 Ok(t) => Ok(t),

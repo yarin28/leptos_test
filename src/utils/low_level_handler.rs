@@ -1,7 +1,7 @@
 /* handles all the low level comunications with the hardware layer
  * this an actor can recive messages and will handle async messages
  */
-use crate::utils::config_builder::SETTINGS; //FIXME: cant figure out how to use static var in diffrent files
+use crate::utils::config_builder::SETTINGS;
 use actix::prelude::*;
 use anyhow::Result;
 use rppal::gpio::Gpio;
@@ -12,11 +12,16 @@ const PUMP_RELAY_PIN: u8 = 4;
 // use tracing::instrument;
 
 #[derive(Debug, Clone, Copy)]
-pub enum LowLevelHandlerCommand {
+pub struct LowLevelHandlerCommand {
+    pub gpio_num: u8,
+    pub message: LowLevelHandlerMessage,
+}
+#[derive(Debug, Clone, Copy)]
+pub enum LowLevelHandlerMessage {
     CloseRelayFor(usize),
     OpenRelayImmediately,
 }
-impl Message for LowLevelHandlerCommand {
+impl Message for LowLevelHandlerMessage {
     type Result = Result<String, std::io::Error>;
 }
 #[derive(Debug)]
@@ -81,13 +86,13 @@ impl Actor for LowLevelHandler {
         event!(tracing::Level::TRACE, "the LowLevelHandler has stopped")
     }
 }
-impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
+impl Handler<LowLevelHandlerMessage> for LowLevelHandler {
     type Result = Result<String, std::io::Error>;
 
     #[instrument(level = "trace", skip(self, _ctx, msg))]
-    fn handle(&mut self, msg: LowLevelHandlerCommand, _ctx: &mut Context<Self>) -> Self::Result {
+    fn handle(&mut self, msg: LowLevelHandlerMessage, _ctx: &mut Context<Self>) -> Self::Result {
         match msg {
-            LowLevelHandlerCommand::CloseRelayFor(seconds) => {
+            LowLevelHandlerMessage::CloseRelayFor(seconds) => {
                 let cancelation_token = self.gpio_pins[0].pump_cancellation_token.clone();
                 self.gpio_pins[0].water_pump_handler = Some(tokio::spawn(async move {
                     let res = Self::pump_water(seconds, cancelation_token.clone()).await;
@@ -99,7 +104,7 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
 
                 Ok(format!("opening the relay for {seconds:}"))
             }
-            LowLevelHandlerCommand::OpenRelayImmediately => {
+            LowLevelHandlerMessage::OpenRelayImmediately => {
                 match &self.gpio_pins[0].water_pump_handler {
                     Some(_handler) => {
                         self.gpio_pins[0].pump_cancellation_token.cancel();

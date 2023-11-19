@@ -195,7 +195,7 @@ impl MyScheduler {
                 Box::pin(async move {
                     // Query the next execution time for this job
                     match low_level_sender_address
-                        .send(crate::utils::LowLevelHandlerCommand::CloseRelayFor(
+                        .send(crate::utils::LowLevelHandlerMessage::CloseRelayFor(
                             config.seconds_to_pump_water,
                         ))
                         .await
