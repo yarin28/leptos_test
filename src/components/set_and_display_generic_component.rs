@@ -42,51 +42,27 @@ pub fn SetAndDisplayComponent(
         set_seconds_value.set(value);
         call_action.dispatch(seconds_value.get());
     };
-    // view! {
-    //         <h4 class="m-0">{move||component_name.clone()}</h4>
-    //     <form on:submit=on_submit
-    //         class="flex flex-row items-center m-0">
-    //     <input type="text"
-    //         value=move ||seconds_value.get()
-    //         node_ref=input_element
-    //         class="input w-full max-w-xs m-0  input-ghost input-bordered input-primary"
-    //     />
-    //     <input type="submit" value=move|| submit_button_description.clone()
-    //     class="btn btn-primary btn-outline m-0"/>
-    // </form>
-    // <p class="m-0">{move||value_description.clone()}"->" {move||seconds_value.get()}</p>
-    // }
     view! {
-            <div class="stats glass text-primary-content">
+    <div class="stats glass text-primary-content">
 
-      <div class="stat">
+        <div class="stat">
             <form on:submit=on_submit>
-                <div class="stat-title text-black text-lg">{move || component_name.clone()}</div>
-                // <div class="stat-title text-black text-lg">{move || component_name.clone()}</div>
-                <div class="stat-value">
-                <input type="text"
-                    value=move ||seconds_value.get()
-                    node_ref=input_element
-                    // class="input w-full max-w-xs m-0  input-ghost input-bordered input-primary"
-                    class="input w-full max-w-xs m-0 input-ghost  input-bordered input-primary font-bold text-2xl"
-                />
-                </div>
-                <div class="stat-actions flex flex-row justify-between">
-        <input type="submit" class="btn btn-sm btn-success" value=move|| submit_button_description.clone()/>
-    <p class="m-0">{move||value_description.clone()}"->" {move||seconds_value.get()}</p>
-                </div>
+                    <div class="stat-title text-black text-lg">{move || component_name.clone()}</div>
+                    // <div class="stat-title text-black text-lg">{move || component_name.clone()}</div>
+                        <div class="stat-value">
+                        <input type="text"
+                            value=move ||seconds_value.get()
+                            node_ref=input_element
+                            // class="input w-full max-w-xs m-0  input-ghost input-bordered input-primary"
+                            class="input w-full max-w-xs m-0 input-ghost  input-bordered input-primary font-bold text-2xl"
+                        />
+                        </div>
+                    <div class="stat-actions flex flex-row justify-between">
+                        <input type="submit" class="btn btn-sm btn-success" value=move|| submit_button_description.clone()/>
+                        <p class="m-0">{move||value_description.clone()}"->" {move||seconds_value.get()}</p>
+                    </div>
             </form>
-      </div>
-
-      <div class="stat">
-        <div class="stat-title">Current balance</div>
-        <div class="stat-value">$89,400</div>
-        <div class="stat-actions">
-          <button class="btn btn-sm">Withdrawal</button>
-          <button class="btn btn-sm">deposit</button>
         </div>
-      </div>
-
     </div>
-        }
+    }
 }

@@ -3,6 +3,8 @@ use leptos::{html::Input, *};
 use web_sys::SubmitEvent;
 
 use cfg_if::cfg_if;
+
+use crate::components::set_and_display_generic_component::SetAndDisplayComponent;
 cfg_if! {
 if #[cfg(feature = "ssr")] {
 use crate::my_scheduler::SchedulerMutex;
@@ -15,46 +17,62 @@ pub fn ChangeCronStringComponent() -> impl IntoView {
         async move { change_corn_string(cron_string).await }
     });
     let stable = create_resource(|| (), move |_| async move { get_cron_string().await });
-    let server_cron_string = stable
-        .get()
-        .map(|val| {
-            val.expect("there was en error whth ther server cron string")
-            // .expect("there was en error whth ther server cron string")
-        })
-        .unwrap_or("there was en error whth ther server cron string".to_string());
-    let (cron_string, set_cron_string) = create_signal(server_cron_string);
-
-    let input_element: NodeRef<Input> = create_node_ref();
-    let on_submit = move |ev: SubmitEvent| {
-        // stop the page from reloading!
-        ev.prevent_default();
-
-        // here, we'll extract the value from the input
-        let value = input_element
-            .get()
-            // event handlers can only fire after the view
-            // is mounted to the DOM, so the `NodeRef` will be `Some`
-            .expect("<input> to exist")
-            // `NodeRef` implements `Deref` for the DOM element type
-            // this means we can call`HtmlInputElement::value()`
-            // to get the current value of the input
-            .value();
-        set_cron_string.set(value);
-        call_action.dispatch(cron_string.get());
-    };
     view! {
-        <form on:submit=on_submit
-            class="flex flex-col items-center">
-        <input type="text"
-            value=move ||cron_string.get()
-            node_ref=input_element
-            class="input w-full max-w-xs  input-ghost input-bordered input-primary"
-        />
-        <input type="submit" value="Send new cron string" class="btn btn-primary btn-outline"/>
-    </form>
-    <p class="m-0">"current cron string is: " {move ||cron_string.get()}</p>
+        <SetAndDisplayComponent
+            component_name="Change cron string".to_string()
+            call_action=call_action
+            stable=stable
+            submit_button_description="change".to_string()
+            value_description="current cron string".to_string()/>
     }
 }
+// #[component]
+// pub fn ChangeCronStringComponent() -> impl IntoView {
+//     let call_action = create_action(move |cron_string: &String| {
+//         let cron_string = cron_string.clone();
+//         async move { change_corn_string(cron_string).await }
+//     });
+//     let stable = create_resource(|| (), move |_| async move { get_cron_string().await });
+//     let server_cron_string = stable
+//         .get()
+//         .map(|val| {
+//             val.expect("there was en error whth ther server cron string")
+//             // .expect("there was en error whth ther server cron string")
+//         })
+//         .unwrap_or("there was en error whth ther server cron string".to_string());
+//     let (cron_string, set_cron_string) = create_signal(server_cron_string);
+//
+//     let input_element: NodeRef<Input> = create_node_ref();
+//     let on_submit = move |ev: SubmitEvent| {
+//         // stop the page from reloading!
+//         ev.prevent_default();
+//
+//         // here, we'll extract the value from the input
+//         let value = input_element
+//             .get()
+//             // event handlers can only fire after the view
+//             // is mounted to the DOM, so the `NodeRef` will be `Some`
+//             .expect("<input> to exist")
+//             // `NodeRef` implements `Deref` for the DOM element type
+//             // this means we can call`HtmlInputElement::value()`
+//             // to get the current value of the input
+//             .value();
+//         set_cron_string.set(value);
+//         call_action.dispatch(cron_string.get());
+//     };
+//     view! {
+//         <form on:submit=on_submit
+//             class="flex flex-col items-center">
+//         <input type="text"
+//             value=move ||cron_string.get()
+//             node_ref=input_element
+//             class="input w-full max-w-xs  input-ghost input-bordered input-primary"
+//         />
+//         <input type="submit" value="Send new cron string" class="btn btn-primary btn-outline"/>
+//     </form>
+//     <p class="m-0">"current cron string is: " {move ||cron_string.get()}</p>
+//     }
+// }
 #[server(ChangeCronString, "/api")]
 #[instrument]
 pub async fn change_corn_string(new_cron_string: String) -> Result<String, ServerFnError> {

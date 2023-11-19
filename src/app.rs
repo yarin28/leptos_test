@@ -48,32 +48,25 @@ fn HomePage() -> impl IntoView {
     view! {
                     <p class="text-2xl font-bold" >"Welcome to the garden control system"</p>
     <div class="flex flex-col m-px w-fit ">
-        <div class="flex flex-row ">
-            <div class="w-3/4">
-            <ChangeCronStringComponent/>
+        <div class="stat flex flex-row content-start flex-wrap">
+                    <ChangeSecondsToPumpWaterComponent/>
+                    <ChangeCronStringComponent/>
+        </div>
+        <div class="flex flex-col align-center flex-wrap">
+            <div class="w-1/4">
+                        <PumpWaterComponent/>
             </div>
-
+            <div class="col-span-3 row-span-2 col-start-1 row-start-5">
+                        <CancelPumpComponent/>
+            </div>
+        </div>
             <div class="w-1/4">
                         <PumpWaterCheck/>
             </div>
-        </div>
-        <div class="col-span-2 row-span-2">
-                    <ChangeSecondsToPumpWaterComponent/>
-        </div>
-        <div class="flex flex-row">
-            <div class="col-span-4 col-start-1 row-start-7">
-                        <CancelPumpComponent/>
-            </div>
-            <div class="col-span-3 row-span-2 col-start-1 row-start-5">
-                        <PumpWaterComponent/>
-            </div>
-        </div>
         <div class="col-span-2 row-span-3 col-start-3 row-start-2">
                     < PumpHelpComponent/ >
         </div>
     </div>
-                <div class="card bg-base-100 shadow-xl bg-transparent  flex flex-col justify-evenly items-center transparant">
-                </div>
-                <CanvasComponent/>
+    <CanvasComponent/>
             }
 }
