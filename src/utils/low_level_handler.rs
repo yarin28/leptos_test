@@ -8,7 +8,6 @@ use rppal::gpio::Gpio;
 use tokio::time::Duration;
 use tokio_util::sync::CancellationToken;
 use tracing::{event, instrument};
-const PUMP_RELAY_PIN: u8 = 4;
 // use tracing::instrument;
 
 #[derive(Debug, Clone, Copy)]
@@ -48,8 +47,8 @@ impl LowLevelHandler {
             .get_table("lua.gpio_table")
             .unwrap();
         let gpio_pins: Vec<GpioPin> = gpio_table
-            .iter()
-            .map(|(_key, value)| {
+            .values()
+            .map(|value| {
                 let table = value.clone().into_table().unwrap();
                 GpioPin {
                     pin_num: table.get("gpio_pin").unwrap().clone().into_int().unwrap() as u8,
@@ -85,17 +84,17 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
 
     #[instrument(level = "trace", skip(self, _ctx, msg))]
     fn handle(&mut self, msg: LowLevelHandlerCommand, _ctx: &mut Context<Self>) -> Self::Result {
-        let gpio_pin_num = self
-            .gpio_pins.//FIXME: iterate without taking ownership (not sure is possible)
-            .into_iter()
+        let gpio_pin = self
+            .gpio_pins
+            .iter_mut()
             .find(|pin| pin.pin_num == msg.pin_num)
-            .map(|gpio_pin| gpio_pin.pin_num)
             .expect("there is no gpio pin with this num");
         match msg.message {
             LowLevelHandlerMessage::CloseRelayFor(seconds) => {
-                let cancelation_token = self.gpio_pins[0].pump_cancellation_token.clone();
-                self.gpio_pins[0].water_pump_handler = Some(tokio::spawn(async move {
-                    let res = Self::pump_water(seconds, cancelation_token.clone()).await;
+                let cancelation_token = gpio_pin.pump_cancellation_token.clone();
+                let pin_num = gpio_pin.pin_num;
+                gpio_pin.water_pump_handler = Some(tokio::spawn(async move {
+                    let res = Self::pump_water(pin_num, seconds, cancelation_token.clone()).await;
                     match res {
                         Ok(_res) => {}
                         Err(e) => event!(tracing::Level::ERROR, "pump_water has returnd {e}"),
@@ -105,7 +104,7 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
                 Ok(format!("opening the relay for {seconds:}"))
             }
             LowLevelHandlerMessage::OpenRelayImmediately => {
-                match &self.gpio_pins[0].water_pump_handler {
+                match &mut self.gpio_pins[0].water_pump_handler {
                     Some(_handler) => {
                         self.gpio_pins[0].pump_cancellation_token.cancel();
                         self.gpio_pins[0].pump_cancellation_token = CancellationToken::new();
@@ -119,22 +118,22 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
 }
 
 impl LowLevelHandler {
-    //FIXME: this function should be generic and get the pin number by a variable.
     #[instrument(level = "trace", skip(cancelation_token))]
     async fn pump_water(
+        pin_num: u8,
         seconds: usize,
         cancelation_token: CancellationToken,
     ) -> Result<&'static str> {
         event!(tracing::Level::TRACE, "opening the relay");
-        let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output(); // because this function call
-                                                                       // had the ? operator it sent the error to the caller that *ignored the error*.
+        let mut pin = Gpio::new()?.get(pin_num)?.into_output(); // because this function call
+                                                                // had the ? operator it sent the error to the caller that *ignored the error*.
         pin.set_high();
         tokio::select! {
                 _ = cancelation_token.cancelled() => {
                     // The token was cancelled
 
         event!(tracing::Level::TRACE, " closing the relay after recived the cancelation_token");
-        let mut pin = Gpio::new()?.get(PUMP_RELAY_PIN)?.into_output();
+        let mut pin = Gpio::new()?.get(pin_num)?.into_output();
         pin.set_low();
                 }
                 _ = tokio::time::sleep(Duration::from_secs(seconds.try_into().unwrap())) => {
@@ -150,6 +149,6 @@ impl LowLevelHandler {
 
 #[test]
 fn ingest_lua_table() {
-    crate::utils::config_builder::config_build();
+    crate::utils::config_builder::config_build().unwrap();
     LowLevelHandler::new();
 }

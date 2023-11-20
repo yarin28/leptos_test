@@ -7,7 +7,7 @@ cfg_if! {
 if #[cfg(feature = "ssr")] {
 use crate::utils::*;
 use actix::prelude::*;
-use tracing::{event, instrument};
+use tracing::{event};
 }
 }
 #[component]

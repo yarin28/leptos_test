@@ -1,10 +1,3 @@
-async fn main2() -> std::io::Result<()> {
-    dbg!(leptos_start::utils::config_builder::SETTINGS
-        .read()
-        .unwrap()
-        .get_string("lua.cron_string"));
-    Ok(())
-}
 #[cfg(feature = "ssr")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

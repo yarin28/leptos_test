@@ -1,6 +1,5 @@
 use anyhow::Result;
-use leptos::{html::Input, *};
-use web_sys::SubmitEvent;
+use leptos::*;
 
 use cfg_if::cfg_if;
 
