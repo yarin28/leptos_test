@@ -13,7 +13,7 @@ const PUMP_RELAY_PIN: u8 = 4;
 
 #[derive(Debug, Clone, Copy)]
 pub struct LowLevelHandlerCommand {
-    pub gpio_num: u8,
+    pub pin_num: u8,
     pub message: LowLevelHandlerMessage,
 }
 #[derive(Debug, Clone, Copy)]
@@ -24,6 +24,9 @@ pub enum LowLevelHandlerMessage {
 impl Message for LowLevelHandlerMessage {
     type Result = Result<String, std::io::Error>;
 }
+impl Message for LowLevelHandlerCommand {
+    type Result = Result<String, std::io::Error>;
+}
 #[derive(Debug)]
 pub struct LowLevelHandler {
     pub gpio_pins: Vec<GpioPin>,
@@ -31,7 +34,7 @@ pub struct LowLevelHandler {
 
 #[derive(Debug)]
 pub struct GpioPin {
-    pub pump_relay_pin: u8,
+    pub pin_num: u8,
     pub close_immediately: bool,
     pub water_pump_handler: Option<tokio::task::JoinHandle<()>>,
     pub pump_cancellation_token: CancellationToken,
@@ -46,28 +49,19 @@ impl LowLevelHandler {
             .unwrap();
         let gpio_pins: Vec<GpioPin> = gpio_table
             .iter()
-            .map(|(key, value)| {
+            .map(|(_key, value)| {
                 let table = value.clone().into_table().unwrap();
                 GpioPin {
-                    pump_relay_pin: table.get("gpio_pin").unwrap().clone().into_int().unwrap()
-                        as u8,
+                    pin_num: table.get("gpio_pin").unwrap().clone().into_int().unwrap() as u8,
                     close_immediately: false,
                     water_pump_handler: None,
                     pump_cancellation_token: CancellationToken::new(),
                 }
             })
             .collect();
-        dbg!(gpio_pins);
+        dbg!(&gpio_pins);
 
-        //i dont belive this function has a possability to fail so i wont use result.
-        LowLevelHandler {
-            gpio_pins: vec![GpioPin {
-                pump_relay_pin: 3,
-                close_immediately: false,
-                water_pump_handler: None,
-                pump_cancellation_token: CancellationToken::new(),
-            }],
-        }
+        LowLevelHandler { gpio_pins }
     }
 }
 impl Default for LowLevelHandler {
@@ -86,12 +80,12 @@ impl Actor for LowLevelHandler {
         event!(tracing::Level::TRACE, "the LowLevelHandler has stopped")
     }
 }
-impl Handler<LowLevelHandlerMessage> for LowLevelHandler {
+impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
     type Result = Result<String, std::io::Error>;
 
     #[instrument(level = "trace", skip(self, _ctx, msg))]
-    fn handle(&mut self, msg: LowLevelHandlerMessage, _ctx: &mut Context<Self>) -> Self::Result {
-        match msg {
+    fn handle(&mut self, msg: LowLevelHandlerCommand, _ctx: &mut Context<Self>) -> Self::Result {
+        match msg.message {
             LowLevelHandlerMessage::CloseRelayFor(seconds) => {
                 let cancelation_token = self.gpio_pins[0].pump_cancellation_token.clone();
                 self.gpio_pins[0].water_pump_handler = Some(tokio::spawn(async move {

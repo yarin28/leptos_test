@@ -2,6 +2,8 @@ use anyhow::Result;
 use leptos::*;
 
 use cfg_if::cfg_if;
+
+use crate::utils::{config_builder::SETTINGS, low_level_handler::LowLevelHandlerCommand};
 cfg_if! {
 if #[cfg(feature = "ssr")] {
 use crate::utils::*;
@@ -20,7 +22,10 @@ pub async fn pump_water(seconds: usize) -> Result<String, ServerFnError> {
         move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
             // let test: () = low_level_handeler;
             match low_level_handeler
-                .send(LowLevelHandlerMessage::CloseRelayFor(seconds))
+                .send(LowLevelHandlerCommand {
+                    pin_num: 4,
+                    message: LowLevelHandlerMessage::CloseRelayFor(seconds),
+                })
                 .await
             {
                 Ok(t) => Ok(t),

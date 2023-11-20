@@ -1,4 +1,5 @@
 use crate::utils::config_builder::SETTINGS;
+use crate::utils::low_level_handler::LowLevelHandlerCommand;
 use actix::Addr;
 use anyhow::Result;
 use std::sync::Arc;
@@ -195,9 +196,10 @@ impl MyScheduler {
                 Box::pin(async move {
                     // Query the next execution time for this job
                     match low_level_sender_address
-                        .send(crate::utils::LowLevelHandlerMessage::CloseRelayFor(
-                            config.seconds_to_pump_water,
-                        ))
+                        .send(LowLevelHandlerCommand {
+                            pin_num: 4,
+                            message: LowLevelHandlerMessage::CloseRelayFor(seconds),
+                        })
                         .await
                     {
                         Ok(_res) => {}
