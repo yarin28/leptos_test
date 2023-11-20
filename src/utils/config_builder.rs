@@ -19,11 +19,6 @@ pub fn config_build() -> anyhow::Result<Config, config::ConfigError> {
     Config::builder()
         .add_source(config::File::from_str(&config_file_content, LuaTable))
         .build()
-
-    // match &config {
-    //     Ok(_cfg) => {}
-    //     Err(e) => println!("An error: {}", e),
-    // }
 }
 
 #[derive(Debug, Clone)]
@@ -95,8 +90,57 @@ fn lua_to_config_value(lua_value: rlua::Value) -> Result<config::Value> {
         rlua::Value::Error(_) => todo!(),
     })
 }
+pub fn get_value_from_settings_object(query_string: &str) -> HashMap<String, Value> {
+    SETTINGS.read().unwrap().get_table(query_string).unwrap()
+}
 
+use config::Value;
 #[test]
-fn name() {
-    unimplemented!();
+fn test_config_values_correctness() {
+    let mut config = config_build();
+    let mut map = config
+        .as_mut()
+        .unwrap()
+        .clone()
+        .get_table("lua.gpio_table")
+        .unwrap();
+    assert!(config
+        .as_mut()
+        .unwrap()
+        .get_string("lua.seconds_to_pump_water")
+        .is_ok());
+    assert!(map.keys().count() != 0);
+    assert!(!map
+        .iter_mut()
+        .map(|gpio_pin_hash_map| {
+            let (_key, value) = gpio_pin_hash_map;
+            value.clone().into_table().unwrap().get("name").is_some()
+                && value
+                    .clone()
+                    .into_table()
+                    .unwrap()
+                    .get("gpio_pin")
+                    .is_some()
+                && value
+                    .clone()
+                    .into_table()
+                    .unwrap()
+                    .get("gpio_type")
+                    .is_some()
+                && value
+                    .clone()
+                    .into_table()
+                    .unwrap()
+                    .get("active_seconds")
+                    .is_some()
+                && value
+                    .clone()
+                    .into_table()
+                    .unwrap()
+                    .get("cron_string")
+                    .is_some()
+        })
+        .collect::<Vec<bool>>()
+        .contains(&false));
+    dbg!(&map);
 }
