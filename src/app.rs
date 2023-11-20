@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::components::cancel_pump_component::CancelPumpComponent;
 use crate::components::canvas_component::CanvasComponent;
 use crate::components::change_cron_string_component::ChangeCronStringComponent;
@@ -5,17 +7,47 @@ use crate::components::change_seconds_to_pump_water_component::ChangeSecondsToPu
 use crate::components::pump_help_component::PumpHelpComponent;
 use crate::components::pump_water_check_component::PumpWaterCheck;
 use crate::components::pump_water_copmpnent::PumpWaterComponent;
-use crate::utils::config_builder;
+use crate::utils::low_level_handler::LowLevelHandlerCommand;
+use crate::utils::{config_builder, LowLevelHandler, LowLevelHandlerMessage};
+use actix::Addr;
 use cfg_if::cfg_if;
-use config::Config;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 cfg_if! {
 if #[cfg(feature = "ssr")] {
-}
+use config::Config;
+use config::Value;
+    }
 }
 
+#[server(GetConfig, "/api")]
+#[instrument]
+pub async fn get_config() -> Result<HashMap<String, Value>, ServerFnError> {
+    match leptos_actix::extract(
+        move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
+            // let test: () = low_level_handeler;
+            match low_level_handeler
+                .send(LowLevelHandlerCommand {
+                    pin_num: 4,
+                    message: LowLevelHandlerMessage::CloseRelayFor(seconds),
+                })
+                .await
+            {
+                Ok(t) => Ok(t),
+                Err(e) => Err(e),
+            }
+        },
+    )
+    .await
+    {
+        Ok(val) => Ok(format!("the pump recived the msessage {val:?}")),
+        // Ok(val) => val.into(),
+        Err(e) => Err(leptos::ServerFnError::ServerError(format!(
+            "couldn`t get the corn string, having a problem with the server{e}"
+        ))),
+    }
+}
 #[component]
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.

@@ -1,7 +1,8 @@
 use anyhow::bail;
 use anyhow::Result;
-use config::{Config, FileStoredFormat, Format, Map};
+use config::{Config, FileStoredFormat, Format, Map, ValueKind};
 use rlua::TablePairs;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::prelude::*;
 
@@ -144,3 +145,29 @@ fn test_config_values_correctness() {
         .contains(&false));
     dbg!(&map);
 }
+
+#[derive(Deserialize, Serialize)]
+#[serde(remote = "Value")]
+pub struct ValueDef {
+    origin: Option<String>,
+
+    pub kind: ValueKindDef,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(remote = "ValueKind")]
+pub enum ValueKindDef {
+    Nil,
+    Boolean(bool),
+    I64(i64),
+    I128(i128),
+    U64(u64),
+    U128(u128),
+    Float(f64),
+    String(String),
+    Table(Map<String, Value>),
+    Array(Array),
+}
+
+pub type Array = Vec<Value>;
+pub type Table = Map<String, Value>;
