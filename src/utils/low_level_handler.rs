@@ -85,6 +85,12 @@ impl Handler<LowLevelHandlerCommand> for LowLevelHandler {
 
     #[instrument(level = "trace", skip(self, _ctx, msg))]
     fn handle(&mut self, msg: LowLevelHandlerCommand, _ctx: &mut Context<Self>) -> Self::Result {
+        let gpio_pin_num = self
+            .gpio_pins.//FIXME: iterate without taking ownership (not sure is possible)
+            .into_iter()
+            .find(|pin| pin.pin_num == msg.pin_num)
+            .map(|gpio_pin| gpio_pin.pin_num)
+            .expect("there is no gpio pin with this num");
         match msg.message {
             LowLevelHandlerMessage::CloseRelayFor(seconds) => {
                 let cancelation_token = self.gpio_pins[0].pump_cancellation_token.clone();

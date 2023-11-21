@@ -1,5 +1,6 @@
 use crate::utils::config_builder::SETTINGS;
 use crate::utils::low_level_handler::LowLevelHandlerCommand;
+use crate::utils::LowLevelHandlerMessage;
 use actix::Addr;
 use anyhow::Result;
 use std::sync::Arc;
@@ -193,12 +194,20 @@ impl MyScheduler {
         let jj = Job::new_async(config.cron_string.clone().as_str(), move |_uuid, mut _l| {
             {
                 let low_level_sender_address = config.low_level_handler_sender.clone();
+                let active_seconds = usize::try_from(
+                    SETTINGS
+                        .read()
+                        .unwrap()
+                        .get_int("lua.active_seconds")
+                        .unwrap(),
+                )
+                .expect("there is no active_seconds inside the lua config");
                 Box::pin(async move {
                     // Query the next execution time for this job
                     match low_level_sender_address
                         .send(LowLevelHandlerCommand {
                             pin_num: 4,
-                            message: LowLevelHandlerMessage::CloseRelayFor(seconds),
+                            message: LowLevelHandlerMessage::CloseRelayFor(active_seconds),
                         })
                         .await
                     {
