@@ -23,7 +23,7 @@ pub async fn turn_on_pin(pin_num: u8, seconds: usize) -> Result<String, ServerFn
             // let test: () = low_level_handeler;
             match low_level_handeler
                 .send(LowLevelHandlerCommand {
-                    pin_num: pin_num,
+                    pin_num,
                     message: LowLevelHandlerMessage::CloseRelayFor(seconds),
                 })
                 .await

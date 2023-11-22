@@ -5,11 +5,12 @@ use crate::components::change_seconds_to_pump_water_component::ChangeSecondsToPu
 use crate::components::pump_help_component::PumpHelpComponent;
 use crate::components::pump_water_check_component::PumpWaterCheck;
 use crate::components::pump_water_copmpnent::PumpWaterComponent;
+use crate::utils::config_builder;
+use cfg_if::cfg_if;
+use config::Config;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
-
-use cfg_if::cfg_if;
 cfg_if! {
 if #[cfg(feature = "ssr")] {
 }
@@ -19,6 +20,9 @@ if #[cfg(feature = "ssr")] {
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
+    provide_context(create_rw_signal(config_builder::config_build()));
+    let state = expect_context::<RwSignal<Config>>();
+    leptos::logging::log!("{:?}", state);
     view! {
 
         // injects a stylesheet into the document <head>

@@ -2,12 +2,12 @@ use leptos::*;
 
 use cfg_if::cfg_if;
 
-use crate::utils::low_level_handler::LowLevelHandlerCommand;
 cfg_if! {
 if #[cfg(feature = "ssr")] {
 use crate::utils::*;
 use actix::prelude::*;
 use tracing::{event};
+use crate::utils::low_level_handler::LowLevelHandlerCommand;
 }
 }
 #[component]
