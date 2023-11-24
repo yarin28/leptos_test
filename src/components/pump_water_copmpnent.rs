@@ -7,7 +7,7 @@ cfg_if! {
 if #[cfg(feature = "ssr")] {
 use crate::utils::*;
 use actix::prelude::*;
-use crate::utils::{config_builder::SETTINGS, low_level_handler::LowLevelHandlerCommand};
+use crate::utils::{config::config_builder::SETTINGS, low_level_handler::LowLevelHandlerCommand};
 }
 }
 pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {

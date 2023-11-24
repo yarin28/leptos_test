@@ -1,7 +1,7 @@
 /* handles all the low level comunications with the hardware layer
  * this an actor can recive messages and will handle async messages
  */
-use crate::utils::config_builder::SETTINGS;
+use crate::utils::config::config_builder::SETTINGS;
 use actix::prelude::*;
 use anyhow::Result;
 use rppal::gpio::Gpio;
@@ -149,6 +149,6 @@ impl LowLevelHandler {
 
 #[test]
 fn ingest_lua_table() {
-    crate::utils::config_builder::config_build().unwrap();
+    crate::utils::config::config_builder::config_build().unwrap();
     LowLevelHandler::new();
 }

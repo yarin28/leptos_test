@@ -7,53 +7,34 @@ use crate::components::change_seconds_to_pump_water_component::ChangeSecondsToPu
 use crate::components::pump_help_component::PumpHelpComponent;
 use crate::components::pump_water_check_component::PumpWaterCheck;
 use crate::components::pump_water_copmpnent::PumpWaterComponent;
-use crate::utils::low_level_handler::LowLevelHandlerCommand;
-use crate::utils::{config_builder, LowLevelHandler, LowLevelHandlerMessage};
-use actix::Addr;
+use crate::utils::config::config_types::{self, *};
 use cfg_if::cfg_if;
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
 cfg_if! {
 if #[cfg(feature = "ssr")] {
-use config::Config;
 use config::Value;
+use crate::utils::{config::config_builder, LowLevelHandler, LowLevelHandlerMessage};
     }
 }
 
 #[server(GetConfig, "/api")]
 #[instrument]
-pub async fn get_config() -> Result<HashMap<String, Value>, ServerFnError> {
-    match leptos_actix::extract(
-        move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
-            // let test: () = low_level_handeler;
-            match low_level_handeler
-                .send(LowLevelHandlerCommand {
-                    pin_num: 4,
-                    message: LowLevelHandlerMessage::CloseRelayFor(seconds),
-                })
-                .await
-            {
-                Ok(t) => Ok(t),
-                Err(e) => Err(e),
-            }
-        },
+pub async fn get_config() -> Result<HashMap<String, config_types::Value>, ServerFnError> {
+    Ok(
+        config_builder::get_value_from_settings_object_to_client("lua")
+            .unwrap()
+            .into_table()
+            .unwrap(),
     )
-    .await
-    {
-        Ok(val) => Ok(format!("the pump recived the msessage {val:?}")),
-        // Ok(val) => val.into(),
-        Err(e) => Err(leptos::ServerFnError::ServerError(format!(
-            "couldn`t get the corn string, having a problem with the server{e}"
-        ))),
-    }
 }
 #[component]
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
-    provide_context(create_rw_signal(config_builder::config_build()));
-    let state = expect_context::<RwSignal<Config>>();
+    // provide_context(create_rw_signal(config_builder::config_build()));
+    let state = expect_context::<RwSignal<HashMap<String, Value>>>();
     leptos::logging::log!("{:?}", state);
     view! {
 

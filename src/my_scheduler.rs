@@ -1,4 +1,4 @@
-use crate::utils::config_builder::SETTINGS;
+use crate::utils::config::config_builder::SETTINGS;
 use crate::utils::low_level_handler::LowLevelHandlerCommand;
 use crate::utils::LowLevelHandlerMessage;
 use actix::Addr;

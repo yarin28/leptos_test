@@ -1,8 +1,8 @@
+use crate::utils::config::config_types::*;
 use anyhow::bail;
 use anyhow::Result;
 use config::{Config, FileStoredFormat, Format, Map, ValueKind};
 use rlua::TablePairs;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::prelude::*;
 
@@ -54,7 +54,6 @@ impl FileStoredFormat for LuaTable {
 }
 
 fn lua_to_config_value(lua_value: rlua::Value) -> Result<config::Value> {
-    // fn lua_to_config_value(lua_value: rlua::Value) -> Result<config::Value, rlua::Error> {
     let uri = "lua".to_string();
     Ok(match lua_value {
         rlua::Value::Table(table) => {
@@ -91,11 +90,90 @@ fn lua_to_config_value(lua_value: rlua::Value) -> Result<config::Value> {
         rlua::Value::Error(_) => todo!(),
     })
 }
-pub fn get_value_from_settings_object(query_string: &str) -> HashMap<String, Value> {
-    SETTINGS.read().unwrap().get_table(query_string).unwrap()
+// i want to pass the config struct to the client without installing the config crate on the
+// client, so i have created a common struct that they can both use
+pub fn config_value_to_public_config_value(origin: config::Value) -> Result<config_types::Value> {
+    Ok(match origin.kind {
+        config::ValueKind::Table(table) => {
+            let value = table
+                .into_iter()
+                .map(|pair| {
+                    let (key, value) = pair;
+                    Ok((key, config_value_to_public_config_value(value)?))
+                })
+                .collect::<Result<Vec<(String, config_types::Value)>>>()?
+                .into_iter()
+                .collect::<HashMap<_, _>>();
+            config_types::Value {
+                origin: None,
+                kind: value.into(),
+            }
+        }
+        ValueKind::Nil => config_types::Value {
+            origin: None,
+            kind: config_types::ValueKind::Nil,
+        },
+        ValueKind::Boolean(val) => config_types::Value {
+            origin: None,
+            kind: config_types::ValueKind::Boolean(val),
+        },
+
+        ValueKind::I64(val) => config_types::Value {
+            origin: None,
+            kind: config_types::ValueKind::I64(val),
+        },
+        ValueKind::I128(val) => config_types::Value {
+            origin: None,
+            kind: config_types::ValueKind::I128(val),
+        },
+
+        ValueKind::U64(val) => config_types::Value {
+            origin: None,
+            kind: config_types::ValueKind::U64(val),
+        },
+
+        ValueKind::U128(val) => config_types::Value {
+            origin: None,
+            kind: config_types::ValueKind::U128(val),
+        },
+
+        ValueKind::Float(val) => config_types::Value {
+            origin: None,
+            kind: config_types::ValueKind::Float(val),
+        },
+
+        ValueKind::String(val) => config_types::Value {
+            origin: None,
+            kind: config_types::ValueKind::String(val),
+        },
+
+        ValueKind::Array(val) => {
+            tracing::event!(
+                tracing::Level::ERROR,
+                "still dident implemeted the array option, please use table"
+            );
+            config_types::Value {
+                origin: None,
+                kind: config_types::ValueKind::Nil,
+            }
+        }
+    })
+}
+
+pub fn get_value_from_settings_object_to_client(query_string: &str) -> Result<config_types::Value> {
+    config_value_to_public_config_value(
+        SETTINGS
+            .read()
+            .unwrap()
+            .get_table(query_string)
+            .unwrap()
+            .into(),
+    )
 }
 
 use config::Value;
+
+use super::config_types;
 #[test]
 fn test_config_values_correctness() {
     let mut config = config_build();
@@ -145,29 +223,3 @@ fn test_config_values_correctness() {
         .contains(&false));
     dbg!(&map);
 }
-
-#[derive(Deserialize, Serialize)]
-#[serde(remote = "Value")]
-pub struct ValueDef {
-    origin: Option<String>,
-
-    pub kind: ValueKindDef,
-}
-
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
-#[serde(remote = "ValueKind")]
-pub enum ValueKindDef {
-    Nil,
-    Boolean(bool),
-    I64(i64),
-    I128(i128),
-    U64(u64),
-    U128(u128),
-    Float(f64),
-    String(String),
-    Table(Map<String, Value>),
-    Array(Array),
-}
-
-pub type Array = Vec<Value>;
-pub type Table = Map<String, Value>;
