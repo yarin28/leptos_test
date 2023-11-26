@@ -14,7 +14,7 @@ use leptos_meta::*;
 use leptos_router::*;
 cfg_if! {
 if #[cfg(feature = "ssr")] {
-use config::Value;
+use crate::utils::config::config_types::Value;
 use crate::utils::{config::config_builder, LowLevelHandler, LowLevelHandlerMessage};
     }
 }
@@ -33,7 +33,7 @@ pub async fn get_config() -> Result<HashMap<String, config_types::Value>, Server
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
-    // provide_context(create_rw_signal(config_builder::config_build()));
+    provide_context(create_rw_signal(get_config().await.unwrap()));
     let state = expect_context::<RwSignal<HashMap<String, Value>>>();
     leptos::logging::log!("{:?}", state);
     view! {
