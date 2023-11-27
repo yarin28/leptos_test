@@ -58,7 +58,6 @@ impl LowLevelHandler {
                 }
             })
             .collect();
-        dbg!(&gpio_pins);
 
         LowLevelHandler { gpio_pins }
     }

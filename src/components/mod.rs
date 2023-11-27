@@ -1,3 +1,4 @@
+pub mod activate_pin_component;
 pub mod cancel_pump_component;
 pub mod canvas_component;
 pub mod change_cron_string_component;

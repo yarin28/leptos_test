@@ -141,33 +141,66 @@ impl Value {
     }
 }
 
-// NOTE: this is my past attempt to bridge both types
-// use config::{Config, FileStoredFormat, Format, Map, Value, ValueKind};
-// use serde::{Deserialize, Serialize};
-//
-// #[derive(Deserialize, Serialize)]
-// #[serde(remote = "Value")]
-// pub struct ValueDef {
-//     origin: Option<String>,
-//
-//     #[serde(with = "ValueKindDef")]
-//     pub kind: ValueKind,
-// }
-//
-// #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
-// #[serde(remote = "ValueKind")]
-// pub enum ValueKindDef {
-//     Nil,
-//     Boolean(bool),
-//     I64(i64),
-//     I128(i128),
-//     U64(u64),
-//     U128(u128),
-//     Float(f64),
-//     String(String),
-//     Table(Map<String, Value>),
-//     Array(Array),
-// }
-//
-// pub type Array = Vec<Value>;
-// pub type Table = Map<String, Value>;
+pub fn into_int(self) -> Result<i64> {
+        match self.kind {
+            ValueKind::I64(value) => Ok(value),
+            ValueKind::I128(value) => value.try_into().map_err(|_| {
+                ConfigError::invalid_type(
+                    self.origin,
+                    Unexpected::I128(value),
+                    "an signed 64 bit or less integer",
+                )
+            }),
+            ValueKind::U64(value) => value.try_into().map_err(|_| {
+                ConfigError::invalid_type(
+                    self.origin,
+                    Unexpected::U64(value),
+                    "an signed 64 bit or less integer",
+                )
+            }),
+            ValueKind::U128(value) => value.try_into().map_err(|_| {
+                ConfigError::invalid_type(
+                    self.origin,
+                    Unexpected::U128(value),
+                    "an signed 64 bit or less integer",
+                )
+            }),
+
+            ValueKind::String(ref s) => {
+                match s.to_lowercase().as_ref() {
+                    "true" | "on" | "yes" => Ok(1),
+                    "false" | "off" | "no" => Ok(0),
+                    _ => {
+                        s.parse().map_err(|_| {
+                            // Unexpected string
+                            ConfigError::invalid_type(
+                                self.origin.clone(),
+                                Unexpected::Str(s.clone()),
+                                "an integer",
+                            )
+                        })
+                    }
+                }
+            }
+
+            ValueKind::Boolean(value) => Ok(if value { 1 } else { 0 }),
+            ValueKind::Float(value) => Ok(value.round() as i64),
+
+            // Unexpected type
+            ValueKind::Nil => Err(ConfigError::invalid_type(
+                self.origin,
+                Unexpected::Unit,
+                "an integer",
+            )),
+            ValueKind::Table(_) => Err(ConfigError::invalid_type(
+                self.origin,
+                Unexpected::Map,
+                "an integer",
+            )),
+            ValueKind::Array(_) => Err(ConfigError::invalid_type(
+                self.origin,
+                Unexpected::Seq,
+                "an integer",
+            )),
+        }
+    }

@@ -198,7 +198,7 @@ impl MyScheduler {
                     SETTINGS
                         .read()
                         .unwrap()
-                        .get_int("lua.active_seconds")
+                        .get_int("lua.seconds_to_pump_water")
                         .unwrap(),
                 )
                 .expect("there is no active_seconds inside the lua config");

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::components::activate_pin_component::ActivatePinsComponent;
 use crate::components::cancel_pump_component::CancelPumpComponent;
 use crate::components::canvas_component::CanvasComponent;
 use crate::components::change_cron_string_component::ChangeCronStringComponent;
@@ -33,9 +34,16 @@ pub async fn get_config() -> Result<HashMap<String, config_types::Value>, Server
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
-    provide_context(create_rw_signal(get_config().await.unwrap()));
-    let state = expect_context::<RwSignal<HashMap<String, Value>>>();
-    leptos::logging::log!("{:?}", state);
+    let once = create_action(|_| async move {
+        {
+            get_config().await.unwrap()
+        }
+    });
+    once.dispatch(0);
+    let config = once.value();
+    provide_context(config);
+    // let state = expect_context::<RwSignal<Option<HashMap<String, config_types::Value>>>>();
+    // leptos::logging::log!("{:?}", state.get());
     view! {
 
         // injects a stylesheet into the document <head>
@@ -43,10 +51,10 @@ pub fn App() -> impl IntoView {
         <Stylesheet id="leptos" href="/pkg/leptos_start.css"/>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"/>
-
+        <ActivatePinsComponent/>
+    // <p> {move || format!("{:?}",config.get())}</p>
         // sets the document title
         <Title text="Garden Pi"/>
-
         // content for this welcome page
         <Router>
             <main>

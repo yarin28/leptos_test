@@ -1,13 +1,16 @@
+use std::collections::HashMap;
+
 use anyhow::Result;
 use leptos::*;
 
 use cfg_if::cfg_if;
 
-use crate::utils::{config_builder::SETTINGS, low_level_handler::LowLevelHandlerCommand};
+use crate::{app::get_config, utils::config::config_types};
 cfg_if! {
 if #[cfg(feature = "ssr")] {
 use crate::utils::*;
 use actix::prelude::*;
+use crate::utils::low_level_handler::LowLevelHandlerCommand;
 }
 }
 pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {
@@ -20,7 +23,6 @@ pub fn check_if_empty(value: Option<Result<String, ServerFnError>>) -> bool {
 pub async fn turn_on_pin(pin_num: u8, seconds: usize) -> Result<String, ServerFnError> {
     match leptos_actix::extract(
         move |low_level_handeler: actix_web::web::Data<Addr<LowLevelHandler>>| async move {
-            // let test: () = low_level_handeler;
             match low_level_handeler
                 .send(LowLevelHandlerCommand {
                     pin_num,
@@ -42,12 +44,32 @@ pub async fn turn_on_pin(pin_num: u8, seconds: usize) -> Result<String, ServerFn
         ))),
     }
 }
+#[component]
+pub fn activate_pins_component() -> impl IntoView {
+    let config = expect_context::<RwSignal<Option<HashMap<String, config_types::Value>>>>();
+    view! {
+            {move ||
+                match config.get(){
+    None=> vec![view!{<p> {move || "there is nothing" }</p>}],
+    Some(config_table) => {
+        config_table.get("gpio_table2").unwrap().clone().into_table().unwrap().values().into_iter().map(|value|{
+            view!{<ActivatePinComponent pin_num=value.into_table().unwrap().get("gpio_pin").unwrap().into_int().unwrap() name="punp".to_string()/>}
+        }).collect::<Vec<_>>()
+    }
+
+                }
+            }
+        }
+}
 
 #[component]
-pub fn activate_pin_component() -> impl IntoView {
-    println!("{:?}", SETTINGS); //FIXME: will not work wip
+pub fn activate_pin_component(name: String, pin_num: usize) -> impl IntoView {
+    let config = expect_context::<RwSignal<Option<HashMap<String, config_types::Value>>>>();
+    // the config variable is a signal and won't be accessable until the call to the server will
+    // be finished.
     let (value, set_value) = create_signal(0);
-    let pump_water = create_action(move |_| async move { pump_water(value.get()).await });
+    let pump_water =
+        create_action(move |_| async move { turn_on_pin(pin_num as u8, value.get()).await });
 
     let pending = pump_water.pending();
     view! {
@@ -70,7 +92,7 @@ pub fn activate_pin_component() -> impl IntoView {
         class:btn-info=move || { pump_water.version().get() ==0 && !pending.get() }
         class:btn-error=move || {pump_water.value().get().map(|v| v.unwrap_or("".to_string()).is_empty()).unwrap_or(false)
         && !pending.get() && pump_water.version().get() >0}
-         >" pump water"</button>
+         >{name}</button>
     <p class="m-0">{move || value} </p>
     <p class="m-0">{move || pending.get().then_some("waiting for response") } </p>
     <p class="m-0">{move || pump_water.value().get()} </p>
