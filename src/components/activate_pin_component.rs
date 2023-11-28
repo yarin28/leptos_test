@@ -47,19 +47,17 @@ pub async fn turn_on_pin(pin_num: u8, seconds: usize) -> Result<String, ServerFn
 #[component]
 pub fn activate_pins_component() -> impl IntoView {
     let config = expect_context::<RwSignal<Option<HashMap<String, config_types::Value>>>>();
-    view! {
-            {move ||
-                match config.get(){
-    None=> vec![view!{<p> {move || "there is nothing" }</p>}],
-    Some(config_table) => {
-        config_table.get("gpio_table2").unwrap().clone().into_table().unwrap().values().into_iter().map(|value|{
-            view!{<ActivatePinComponent pin_num=value.into_table().unwrap().get("gpio_pin").unwrap().into_int().unwrap() name="punp".to_string()/>}
-        }).collect::<Vec<_>>()
-    }
+    let activate_pins = create_resource(move || config.get(), |_| get_config());
 
-                }
-            }
-        }
+    view! {
+    <div>
+        <Suspense fallback= move || view!{<p>"Loading (suspense fallback literlay)"</p>}>
+        {move || {
+                     activate_pins.read()
+                 }}
+
+        </Suspense>
+    </div>};
 }
 
 #[component]
