@@ -47,16 +47,24 @@ pub async fn turn_on_pin(pin_num: u8, seconds: usize) -> Result<String, ServerFn
 #[component]
 pub fn activate_pins_component() -> impl IntoView {
     let config = expect_context::<RwSignal<Option<HashMap<String, config_types::Value>>>>();
-    let activate_pins = create_resource(move || config.get(), |_| get_config());
-
+    let activate_pins = create_resource(move || config.get(), |_| get_config())
+        .get()
+        .unwrap()
+        .unwrap()
+        .get("gpio_table2");
+    let activate_pins_component_array = activate_pins.map(|gpio_pin| {
+        gpio_pin;
+        leptos::logging::log!("{:?}", gpio_pin);
+        // <ActivatePinCmponent  name=gpio_pin />
+    });
     view! {
     <div>
-        <Suspense fallback= move || view!{<p>"Loading (suspense fallback literlay)"</p>}>
-        {move || {
-                     activate_pins.read()
-                 }}
-
-        </Suspense>
+        // <Suspense fallback= move || view!{<p>"Loading (suspense fallback literlay)"</p>}>
+        // // {move || {
+        // //              activate_pins.get()
+        // //          }}
+        // //
+        // </Suspense>
     </div>};
 }
 

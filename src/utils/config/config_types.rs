@@ -139,9 +139,8 @@ impl Value {
             }
         }
     }
-}
 
-pub fn into_int(self) -> Result<i64> {
+    pub fn into_int(self) -> std::result::Result<i64> {
         match self.kind {
             ValueKind::I64(value) => Ok(value),
             ValueKind::I128(value) => value.try_into().map_err(|_| {
@@ -204,3 +203,4 @@ pub fn into_int(self) -> Result<i64> {
             )),
         }
     }
+}
